@@ -20,18 +20,17 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Database",
 ]
-
-[project.urls]
-Homepage = "https://github.com/bk/uc-metrics"
-Source = "https://github.com/bk/uc-metrics"
-Issues = "https://github.com/bk/uc-metrics/issues"
-
 dependencies = [
     "databricks-sdk>=0.30.0,<1.0",
     "pydantic>=2.0,<3.0",
     "click>=8.0,<9.0",
     "pyyaml>=6.0,<7.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/bk/uc-metrics"
+"Source Code" = "https://github.com/bk/uc-metrics"
+"Bug Tracker" = "https://github.com/bk/uc-metrics/issues"
 
 [project.optional-dependencies]
 dev = [
