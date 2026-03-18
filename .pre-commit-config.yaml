@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.6  # keep in sync with ruff pin in pyproject.toml [dev]
+    hooks:
+      - id: ruff          # lint — uses [tool.ruff.lint] from pyproject.toml
+      - id: ruff-format   # format — uses [tool.ruff] line-length from pyproject.toml
