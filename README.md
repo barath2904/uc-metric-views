@@ -66,15 +66,28 @@ ucm deploy ./examples/ \
 
 ## Authentication
 
-All commands that connect to Databricks accept `--host` and `--token` flags, or read from environment variables:
+The SDK auto-detects credentials from environment variables. Two methods are supported:
+
+### OAuth M2M — Service Principal (recommended for CI/CD)
+
+```bash
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+export DATABRICKS_CLIENT_ID="your-service-principal-client-id"
+export DATABRICKS_CLIENT_SECRET="your-service-principal-secret"
+export DATABRICKS_WAREHOUSE_ID="abc123"  # for deploy
+```
+
+Create a Service Principal in your Databricks account console, grant it access to the target catalog/schema, and use its client ID and secret. Credentials are scoped to the SP rather than a user account and can be rotated independently.
+
+### Personal Access Token (PAT)
 
 ```bash
 export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
-export DATABRICKS_WAREHOUSE_ID="abc123"  # optional, for deploy
+export DATABRICKS_WAREHOUSE_ID="abc123"  # for deploy
 ```
 
-The SDK also supports `~/.databrickscfg` profiles.
+PATs can also be passed via `--host` and `--token` CLI flags. The SDK additionally supports `~/.databrickscfg` profiles for local development.
 
 ## Example YAML
 
