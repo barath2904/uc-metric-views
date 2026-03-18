@@ -1,0 +1,36 @@
+# Simplest possible metric view — single source table, no joins.
+# Works with Databricks samples catalog (available on all workspaces).
+#
+# Deploy:
+#   ucm deploy examples/basic_single_table.yaml \
+#     --catalog your_catalog --schema your_schema --warehouse-id YOUR_ID
+#
+version: "1.1"
+comment: "NYC taxi trip metrics — basic single-table example"
+source: samples.nyctaxi.trips
+
+dimensions:
+  - name: Pickup Date
+    expr: "DATE_TRUNC('DAY', tpep_pickup_datetime)"
+    comment: "Day of taxi pickup"
+
+  - name: Pickup Zip
+    expr: "pickup_zip"
+    comment: "Pickup location ZIP code"
+
+  - name: Dropoff Zip
+    expr: "dropoff_zip"
+    comment: "Dropoff location ZIP code"
+
+measures:
+  - name: Trip Count
+    expr: "COUNT(1)"
+    comment: "Total number of trips"
+
+  - name: Total Fare
+    expr: "SUM(fare_amount)"
+    comment: "Sum of base fare amounts"
+
+  - name: Average Distance
+    expr: "AVG(trip_distance)"
+    comment: "Average trip distance in miles"

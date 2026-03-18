@@ -1,0 +1,14 @@
+version: "1.1"
+comment: "Orders KPIs"
+source: analytics.gold.fct_orders
+dimensions:
+  - name: Order Date
+    expr: "o_orderdate"
+  - name: Customer Id
+    expr: "o_custkey"
+measures:
+  - name: Row Count
+    expr: "COUNT(1)"
+    comment: "Total number of records"
+  - name: Total Revenue
+    expr: "SUM(o_totalprice)"

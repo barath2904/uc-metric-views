@@ -1,0 +1,13 @@
+version: "1.1"
+source: analytics.gold.fct_orders
+dimensions:
+  - name: Order Date
+    expr: "o_orderdate"
+measures:
+  - name: Row Count
+    expr: "COUNT(1)"
+  - name: Trailing 7 Day Revenue
+    expr: "SUM(o_totalprice)"
+    window:
+      - order: Order Date
+        range: trailing 7 day

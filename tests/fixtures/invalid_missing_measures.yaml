@@ -1,0 +1,5 @@
+version: "1.1"
+source: analytics.gold.fct_orders
+dimensions:
+  - name: Order Date
+    expr: "o_orderdate"
