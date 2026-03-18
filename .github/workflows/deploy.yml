@@ -1,0 +1,44 @@
+name: Deploy Metric Views
+on:
+  push:
+    branches: [main]
+    paths: ["metric_views/**"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [dev, staging, prod]
+      dry_run:
+        description: "Dry run only"
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - name: Validate
+        run: ucm validate ./metric_views/ --strict
+      - name: Deploy
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_WAREHOUSE_ID: ${{ vars.WAREHOUSE_ID }}
+          DEPLOY_CATALOG: ${{ vars.CATALOG }}
+          DEPLOY_SCHEMA: ${{ vars.SCHEMA }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          FLAGS=""
+          if [ "$DRY_RUN" = "true" ]; then FLAGS="--dry-run"; fi
+          ucm deploy ./metric_views/ \
+            --catalog "$DEPLOY_CATALOG" \
+            --schema "$DEPLOY_SCHEMA" \
+            $FLAGS
