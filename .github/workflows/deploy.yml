@@ -1,3 +1,13 @@
+# Deploys metric view YAML files to a Databricks Unity Catalog schema.
+#
+# REQUIRES the following configured on the target GitHub environment
+# (dev / staging / prod):
+#   Secrets: DATABRICKS_HOST, DATABRICKS_TOKEN
+#   Variables: WAREHOUSE_ID, CATALOG, SCHEMA
+#
+# Contributors forking this repo: this workflow will not run for you
+# unless you configure the above in your own repo's environment settings.
+# Use `ucm deploy --dry-run` locally to test without credentials.
 name: Deploy Metric Views
 on:
   push:
@@ -21,12 +31,12 @@ jobs:
     environment: ${{ github.event.inputs.target || 'dev' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.11"
-      - run: pip install -e .
+      - run: uv sync
       - name: Validate
-        run: ucm validate ./examples/ --strict
+        run: uv run ucm validate ./examples/ --strict
       - name: Deploy
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
@@ -38,7 +48,7 @@ jobs:
         run: |
           FLAGS=""
           if [ "$DRY_RUN" = "true" ]; then FLAGS="--dry-run"; fi
-          ucm deploy ./examples/ \
+          uv run ucm deploy ./examples/ \
             --catalog "$DEPLOY_CATALOG" \
             --schema "$DEPLOY_SCHEMA" \
             $FLAGS
