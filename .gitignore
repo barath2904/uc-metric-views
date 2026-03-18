@@ -2,8 +2,10 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
 build/
+
+# Build artefacts — never commit wheels or sdists
+dist/
 
 # Testing / Coverage
 .pytest_cache/
