@@ -26,7 +26,7 @@ jobs:
 
   validate:
     runs-on: ubuntu-latest
-    if: hashFiles('examples/*.yaml') != ''
+    if: ${{ hashFiles('examples/*.yaml') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
