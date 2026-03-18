@@ -12,8 +12,6 @@ import click
 from . import deployer, generator, introspector, validator
 from .heuristics import classify_table
 
-logger = logging.getLogger(__name__)
-
 
 class DatabricksError(click.ClickException):
     """Wrap SDK exceptions with human-readable messages."""

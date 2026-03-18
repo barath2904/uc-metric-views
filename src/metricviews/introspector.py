@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import fnmatch
-import logging
 
 from databricks.sdk import WorkspaceClient
 
 from .models import DiscoveredColumn, DiscoveredTable
-
-logger = logging.getLogger(__name__)
 
 
 def create_client(

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,8 +11,6 @@ import pydantic
 import yaml  # type: ignore[import-untyped]
 
 from .models import JoinDef, MetricViewSpec
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
