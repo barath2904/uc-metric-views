@@ -51,6 +51,15 @@ class TestBuildDdl:
         with pytest.raises(ValueError, match="Invalid view_name"):
             build_ddl("yaml", "c", "s", "my`view")
 
+    def test_allows_hyphenated_identifiers(self):
+        """Real-world Databricks catalogs can have hyphens (e.g. prod-us-east)."""
+        ddl = build_ddl("yaml", "prod-us-east", "my_sch", "my_view")
+        assert "`prod-us-east`" in ddl
+
+    def test_rejects_semicolon_in_identifier(self):
+        with pytest.raises(ValueError, match="Invalid catalog"):
+            build_ddl("yaml", "cat;DROP", "s", "v")
+
 
 class TestDeployFile:
     def test_dry_run_returns_sql_without_executing(self, tmp_path: Path):
@@ -101,6 +110,24 @@ class TestDeployFile:
         )
         assert result.view_fqn == "cat.sch.custom_name"
 
+    def test_non_succeeded_state_returns_failed(self, tmp_path: Path):
+        """SDK call succeeds but returns FAILED state (e.g. SQL syntax error)."""
+        from databricks.sdk.service.sql import StatementState
+
+        f = tmp_path / "test.yaml"
+        f.write_text(_VALID_YAML)
+
+        response = MagicMock()
+        response.status.state = StatementState.FAILED
+        response.status.error = "PARSE_SYNTAX_ERROR"
+
+        client = MagicMock()
+        client.statement_execution.execute_statement.return_value = response
+
+        result = deploy_file(client, f, "cat", "sch", "wh123")
+        assert result.status == "failed"
+        assert "PARSE_SYNTAX_ERROR" in result.error  # type: ignore[operator]
+
     def test_deploy_file_validates_before_deploying(self, tmp_path: Path):
         """deploy_file must validate — invalid YAML should fail without executing."""
         bad = tmp_path / "bad.yaml"
@@ -116,6 +143,14 @@ class TestDeployFile:
 
 
 class TestDeployDirectory:
+    def test_empty_directory_returns_failure(self, tmp_path: Path):
+        """Empty directory should not silently succeed."""
+        client = MagicMock()
+        results = deploy_directory(client, tmp_path, "cat", "sch", "wh123")
+        assert len(results) == 1
+        assert results[0].status == "failed"
+        assert "No YAML files" in results[0].error  # type: ignore[operator]
+
     def test_skips_files_with_validation_errors(self, tmp_path: Path):
         # Invalid YAML — missing measures
         bad = tmp_path / "bad.yaml"

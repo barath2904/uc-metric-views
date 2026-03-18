@@ -113,6 +113,24 @@ class TestSdkErrorWrapping:
         assert "Authentication failed" in result.output
 
     @patch("metricviews.cli.introspector")
+    def test_auth_error_hides_details_without_verbose(self, mock_intro):
+        """Security: raw exception details (may contain tokens) are suppressed by default."""
+        mock_intro.create_client.side_effect = Exception("401 Unauthorized: InvalidAccessToken")
+        runner = CliRunner()
+        result = runner.invoke(cli, ["inspect", "--source", "cat.sch.tbl"])
+        assert "Authentication failed" in result.output
+        assert "InvalidAccessToken" not in result.output
+
+    @patch("metricviews.cli.introspector")
+    def test_auth_error_shows_details_with_verbose(self, mock_intro):
+        """With --verbose, raw details are shown for debugging."""
+        mock_intro.create_client.side_effect = Exception("401 Unauthorized: InvalidAccessToken")
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--verbose", "inspect", "--source", "cat.sch.tbl"])
+        assert "Authentication failed" in result.output
+        assert "InvalidAccessToken" in result.output
+
+    @patch("metricviews.cli.introspector")
     def test_connection_error_shows_friendly_message(self, mock_intro):
         err = ConnectionError("Failed to connect")
         mock_intro.create_client.side_effect = err

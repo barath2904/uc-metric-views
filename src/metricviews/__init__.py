@@ -1,4 +1,4 @@
-"""uc-metrics: Generate, validate, and deploy Databricks metric views.
+"""uc-metric-views: Generate, validate, and deploy Databricks metric views.
 
 Lazy imports: importing metricviews does not eagerly pull in databricks-sdk
 or other heavy dependencies. Use explicit submodule imports (e.g.,

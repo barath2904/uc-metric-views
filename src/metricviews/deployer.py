@@ -15,14 +15,15 @@ from .validator import validate_file
 
 logger = logging.getLogger(__name__)
 
-_IDENTIFIER_PATTERN = re.compile(r"^[\w]+$")
+_IDENTIFIER_PATTERN = re.compile(r"^[\w-]+$")
 
 
 def _validate_identifier(value: str, label: str) -> None:
     """Reject identifiers containing backticks or other unsafe characters."""
     if not _IDENTIFIER_PATTERN.match(value):
         raise ValueError(
-            f"Invalid {label} '{value}': must contain only alphanumeric characters and underscores"
+            f"Invalid {label} '{value}': "
+            "must contain only alphanumeric characters, underscores, and hyphens"
         )
 
 
@@ -80,7 +81,17 @@ def deploy_file(
             error=f"Validation failed: {val_errors[0].message}",
         )
 
-    yaml_content = path.read_text()
+    try:
+        yaml_content = path.read_text()
+    except (OSError, UnicodeDecodeError) as e:
+        return DeployResult(
+            yaml_file=path.name,
+            view_fqn=fqn,
+            status="failed",
+            sql="",
+            error=f"Cannot read file: {e}",
+        )
+
     ddl = build_ddl(yaml_content, catalog, schema, vname)
 
     if dry_run:
@@ -138,6 +149,17 @@ def deploy_directory(
     """Deploy all YAML files in a directory. Validates (errors only) before each."""
     path = Path(yaml_dir)
     yaml_files = sorted(path.glob("*.yaml")) + sorted(path.glob("*.yml"))
+
+    if not yaml_files:
+        return [
+            DeployResult(
+                yaml_file="(none)",
+                view_fqn="",
+                status="failed",
+                sql="",
+                error=f"No YAML files found in {path}",
+            )
+        ]
 
     results: list[DeployResult] = []
     for f in yaml_files:

@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for uc-metrics tests."""
+"""Shared pytest fixtures for uc-metric-views tests."""
 
 from __future__ import annotations
 

@@ -92,6 +92,8 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
         raw = yaml.safe_load(path.read_text())
     except yaml.YAMLError as e:
         return [YamlValidationError(name, f"Invalid YAML: {e}")]
+    except (OSError, UnicodeDecodeError) as e:
+        return [YamlValidationError(name, f"Cannot read file: {e}")]
 
     if not isinstance(raw, dict):
         return [YamlValidationError(name, "YAML must be a mapping (dict)")]

@@ -1,4 +1,4 @@
-"""CLI entrypoint for uc-metrics."""
+"""CLI entrypoint for uc-metric-views."""
 
 from __future__ import annotations
 
@@ -39,11 +39,11 @@ def _handle_sdk_error(e: Exception, verbose: bool = False) -> NoReturn:
 
 
 @click.group()
-@click.version_option(version=pkg_version("uc-metrics"), prog_name="ucm")
+@click.version_option(version=pkg_version("uc-metric-views"), prog_name="ucm")
 @click.option("--verbose", "-v", is_flag=True, help="Enable debug logging")
 @click.pass_context
 def cli(ctx: click.Context, verbose: bool) -> None:
-    """uc-metrics: Generate, validate, and deploy Databricks metric views."""
+    """uc-metric-views: Generate, validate, and deploy Databricks metric views."""
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(message)s")
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
