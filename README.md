@@ -203,7 +203,7 @@ measures:
     expr: "AVG(trip_distance)"
 ```
 
-More examples in the [`examples/`](examples/) directory — all use the Databricks `samples` catalog available on every workspace.
+More examples in the [`examples/`](examples/) directory — all use the Databricks `samples` catalog available on every workspace. Each file includes a description of what it demonstrates.
 
 ---
 
