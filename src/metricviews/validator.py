@@ -110,7 +110,16 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
     except pydantic.ValidationError as e:
         return [*errors, YamlValidationError(name, f"Schema validation failed: {e}")]
 
-    # 4. Source should be FQN or SQL query
+    # 4. Version check
+    if spec.version != "1.1":
+        errors.append(
+            YamlValidationError(
+                name,
+                f"Unsupported version '{spec.version}' — only '1.1' is supported",
+            )
+        )
+
+    # 5. Source should be FQN or SQL query
     if not _FQN_PATTERN.match(spec.source) and "SELECT" not in spec.source.upper():
         errors.append(
             YamlValidationError(
@@ -121,7 +130,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
             )
         )
 
-    # 5. Measures should contain aggregate functions
+    # 6. Measures should contain aggregate functions
     for m in spec.measures:
         expr_upper = m.expr.upper()
         has_agg = any(fn in expr_upper for fn in _AGG_FUNCTIONS)
@@ -135,7 +144,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                 )
             )
 
-    # 6. Experimental: materialization
+    # 7. Experimental: materialization
     if spec.materialization:
         errors.append(
             YamlValidationError(
@@ -145,7 +154,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
             )
         )
 
-    # 7. Experimental: window measures
+    # 8. Experimental: window measures
     for m in spec.measures:
         if m.window:
             errors.append(
@@ -157,7 +166,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
             )
             break
 
-    # 8. Format type validation
+    # 9. Format type validation
     for col in list(spec.dimensions) + list(spec.measures):
         if col.format and isinstance(col.format, dict):
             fmt_type = col.format.get("type")
@@ -170,7 +179,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                     )
                 )
 
-    # 9. Synonym count (max 10 per column)
+    # 10. Synonym count (max 10 per column)
     errors.extend(
         YamlValidationError(
             name,
@@ -180,7 +189,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
         if col.synonyms and len(col.synonyms) > 10
     )
 
-    # 10. Placeholder join keys
+    # 11. Placeholder join keys
     if spec.joins:
         errors.extend(
             YamlValidationError(

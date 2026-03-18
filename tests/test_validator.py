@@ -98,6 +98,21 @@ measures:
         errors = validate_file(f)
         assert any("format type" in e.message.lower() for e in errors)
 
+    def test_unsupported_version_is_error(self, tmp_path):
+        yaml_content = """version: "2.0"
+source: cat.sch.tbl
+dimensions:
+  - name: D1
+    expr: "col1"
+measures:
+  - name: M1
+    expr: "SUM(col2)"
+"""
+        f = tmp_path / "bad_version.yaml"
+        f.write_text(yaml_content)
+        errors = validate_file(f)
+        assert any("version" in e.message.lower() and "2.0" in e.message for e in errors)
+
     def test_non_fqn_source_emits_warning(self, tmp_path):
         yaml_content = """version: "1.1"
 source: not_a_valid_source
