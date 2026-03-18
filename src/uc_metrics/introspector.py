@@ -1,4 +1,5 @@
 """Unity Catalog introspection — discover tables and their schemas."""
+
 from __future__ import annotations
 
 import fnmatch
@@ -20,12 +21,13 @@ def create_client(
     Falls back to DATABRICKS_HOST / DATABRICKS_TOKEN env vars
     and ~/.databrickscfg profile if not provided.
     """
-    kwargs: dict[str, str] = {}
+    if host and token:
+        return WorkspaceClient(host=host, token=token)
     if host:
-        kwargs["host"] = host
+        return WorkspaceClient(host=host)
     if token:
-        kwargs["token"] = token
-    return WorkspaceClient(**kwargs)
+        return WorkspaceClient(token=token)
+    return WorkspaceClient()
 
 
 _VIEW_TYPES = {"VIEW", "MATERIALIZED_VIEW", "METRIC_VIEW", "STREAMING_TABLE"}
@@ -43,6 +45,8 @@ def list_tables(
     names = []
     for t in tables:
         if not include_views and t.table_type and t.table_type.value in _VIEW_TYPES:
+            continue
+        if not t.name:
             continue
         if table_filter and not fnmatch.fnmatch(t.name, table_filter):
             continue
@@ -63,7 +67,7 @@ def discover_table(
     # col.type_name is a ColumnTypeName enum — extract .value for the string
     columns = [
         DiscoveredColumn(
-            name=col.name,
+            name=col.name or "",
             type_name=col.type_name.value if col.type_name else "STRING",
             comment=col.comment,
         )

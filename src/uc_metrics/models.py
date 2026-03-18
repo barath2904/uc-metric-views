@@ -1,8 +1,9 @@
 """Pydantic models for Databricks metric view YAML spec v1.1."""
+
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -31,7 +32,7 @@ class DimensionDef(BaseModel):
     expr: str
     comment: str | None = None
     display_name: str | None = None
-    format: dict | None = None
+    format: dict[str, Any] | None = None
     synonyms: list[str] | None = None
 
 
@@ -40,7 +41,7 @@ class MeasureDef(BaseModel):
     expr: str
     comment: str | None = None
     display_name: str | None = None
-    format: dict | None = None
+    format: dict[str, Any] | None = None
     synonyms: list[str] | None = None
     window: list[WindowSpec] | None = None
 

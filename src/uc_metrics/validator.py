@@ -1,4 +1,5 @@
 """Validate metric view YAML files before deployment."""
+
 from __future__ import annotations
 
 import logging
@@ -8,7 +9,7 @@ from pathlib import Path
 from typing import Literal
 
 import pydantic
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .models import JoinDef, MetricViewSpec
 
@@ -25,10 +26,17 @@ class YamlValidationError:
 
 
 _AGG_FUNCTIONS = (
-    "SUM(", "COUNT(", "AVG(", "MIN(", "MAX(",
-    "COUNT_IF(", "APPROX_COUNT_DISTINCT(",
-    "COLLECT_SET(", "COLLECT_LIST(",
-    "PERCENTILE(", "STDDEV(",
+    "SUM(",
+    "COUNT(",
+    "AVG(",
+    "MIN(",
+    "MAX(",
+    "COUNT_IF(",
+    "APPROX_COUNT_DISTINCT(",
+    "COLLECT_SET(",
+    "COLLECT_LIST(",
+    "PERCENTILE(",
+    "STDDEV(",
 )
 
 _FQN_PATTERN = re.compile(r"^[\w]+\.[\w]+\.[\w]+$")
@@ -51,14 +59,16 @@ def _fix_yaml_on_boolean_keys(raw: dict) -> list[YamlValidationError]:  # type: 
             if True in join_dict:
                 join_dict["on"] = join_dict.pop(True)
                 join_name = join_dict.get("name", "unknown")
-                warnings.append(YamlValidationError(
-                    file="",  # caller fills in
-                    message=(
-                        f"Join '{join_name}': bare 'on:' was parsed as boolean True "
-                        f"by YAML 1.1 — it must be quoted as '\"on\":' in your YAML file"
-                    ),
-                    severity="warning",
-                ))
+                warnings.append(
+                    YamlValidationError(
+                        file="",  # caller fills in
+                        message=(
+                            f"Join '{join_name}': bare 'on:' was parsed as boolean True "
+                            f"by YAML 1.1 — it must be quoted as '\"on\":' in your YAML file"
+                        ),
+                        severity="warning",
+                    )
+                )
             if "joins" in join_dict and isinstance(join_dict["joins"], list):
                 _fix_joins(join_dict["joins"])
 
@@ -100,12 +110,14 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
 
     # 4. Source should be FQN or SQL query
     if not _FQN_PATTERN.match(spec.source) and "SELECT" not in spec.source.upper():
-        errors.append(YamlValidationError(
-            name,
-            f"Source '{spec.source}' should be fully-qualified "
-            "(catalog.schema.table) or a SQL query",
-            "warning",
-        ))
+        errors.append(
+            YamlValidationError(
+                name,
+                f"Source '{spec.source}' should be fully-qualified "
+                "(catalog.schema.table) or a SQL query",
+                "warning",
+            )
+        )
 
     # 5. Measures should contain aggregate functions
     for m in spec.measures:
@@ -113,28 +125,34 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
         has_agg = any(fn in expr_upper for fn in _AGG_FUNCTIONS)
         has_measure_ref = "MEASURE(" in expr_upper
         if not has_agg and not has_measure_ref and "/" not in m.expr:
-            errors.append(YamlValidationError(
-                name,
-                f"Measure '{m.name}' may be missing aggregate function: {m.expr}",
-                "warning",
-            ))
+            errors.append(
+                YamlValidationError(
+                    name,
+                    f"Measure '{m.name}' may be missing aggregate function: {m.expr}",
+                    "warning",
+                )
+            )
 
     # 6. Experimental: materialization
     if spec.materialization:
-        errors.append(YamlValidationError(
-            name,
-            "materialization is an Experimental feature — behavior may change",
-            "warning",
-        ))
+        errors.append(
+            YamlValidationError(
+                name,
+                "materialization is an Experimental feature — behavior may change",
+                "warning",
+            )
+        )
 
     # 7. Experimental: window measures
     for m in spec.measures:
         if m.window:
-            errors.append(YamlValidationError(
-                name,
-                f"Measure '{m.name}' uses window (Experimental feature)",
-                "warning",
-            ))
+            errors.append(
+                YamlValidationError(
+                    name,
+                    f"Measure '{m.name}' uses window (Experimental feature)",
+                    "warning",
+                )
+            )
             break
 
     # 8. Format type validation
@@ -142,11 +160,13 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
         if col.format and isinstance(col.format, dict):
             fmt_type = col.format.get("type")
             if fmt_type and fmt_type not in _VALID_FORMAT_TYPES:
-                errors.append(YamlValidationError(
-                    name,
-                    f"Column '{col.name}' has unknown format type '{fmt_type}'. "
-                    f"Valid: {', '.join(sorted(_VALID_FORMAT_TYPES))}",
-                ))
+                errors.append(
+                    YamlValidationError(
+                        name,
+                        f"Column '{col.name}' has unknown format type '{fmt_type}'. "
+                        f"Valid: {', '.join(sorted(_VALID_FORMAT_TYPES))}",
+                    )
+                )
 
     # 9. Synonym count (max 10 per column)
     errors.extend(

@@ -1,4 +1,5 @@
 """CLI entrypoint for uc-metrics."""
+
 from __future__ import annotations
 
 import logging
@@ -156,10 +157,7 @@ def inspect(
 def validate(ctx: click.Context, path: str, strict: bool) -> None:
     """Validate YAML metric view definitions. PATH is a file or directory."""
     p = Path(path)
-    errors = (
-        validator.validate_directory(p) if p.is_dir()
-        else validator.validate_file(p)
-    )
+    errors = validator.validate_directory(p) if p.is_dir() else validator.validate_file(p)
 
     error_count = sum(1 for e in errors if e.severity == "error")
     warning_count = sum(1 for e in errors if e.severity == "warning")
@@ -200,7 +198,7 @@ def deploy(
     """Deploy YAML metric views to Databricks Unity Catalog."""
     # Skip client creation for dry_run — no SDK calls will be made
     if dry_run:
-        client = None  # type: ignore[assignment]  # not used in dry_run path
+        client = None  # not used in dry_run path
     else:
         try:
             client = introspector.create_client(host, token)
@@ -209,9 +207,9 @@ def deploy(
 
     p = Path(path)
     results = (
-        deployer.deploy_directory(client, p, catalog, schema, warehouse_id, dry_run=dry_run)
+        deployer.deploy_directory(client, p, catalog, schema, warehouse_id, dry_run=dry_run)  # type: ignore[arg-type]
         if p.is_dir()
-        else [deployer.deploy_file(client, p, catalog, schema, warehouse_id, dry_run=dry_run)]
+        else [deployer.deploy_file(client, p, catalog, schema, warehouse_id, dry_run=dry_run)]  # type: ignore[arg-type]
     )
 
     success = sum(1 for r in results if r.status == "success")
