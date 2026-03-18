@@ -2,7 +2,7 @@ name: Deploy Metric Views
 on:
   push:
     branches: [main]
-    paths: ["metric_views/**"]
+    paths: ["examples/**"]
   workflow_dispatch:
     inputs:
       target:
@@ -26,7 +26,7 @@ jobs:
           python-version: "3.11"
       - run: pip install -e .
       - name: Validate
-        run: ucm validate ./metric_views/ --strict
+        run: ucm validate ./examples/ --strict
       - name: Deploy
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
@@ -38,7 +38,7 @@ jobs:
         run: |
           FLAGS=""
           if [ "$DRY_RUN" = "true" ]; then FLAGS="--dry-run"; fi
-          ucm deploy ./metric_views/ \
+          ucm deploy ./examples/ \
             --catalog "$DEPLOY_CATALOG" \
             --schema "$DEPLOY_SCHEMA" \
             $FLAGS
