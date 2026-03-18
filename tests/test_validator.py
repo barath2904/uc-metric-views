@@ -1,7 +1,8 @@
 """Tests for YAML metric view validator."""
+
 from pathlib import Path
 
-from uc_metrics.validator import validate_directory, validate_file
+from metricviews.validator import validate_directory, validate_file
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -40,14 +41,13 @@ class TestValidateFile:
         a confusing Pydantic error."""
         errors = validate_file(FIXTURES / "unquoted_on_key.yaml")
         warnings = [e for e in errors if e.severity == "warning"]
-        assert any("on" in e.message.lower() and "quoted" in e.message.lower()
-                    for e in warnings)
+        assert any("on" in e.message.lower() and "quoted" in e.message.lower() for e in warnings)
         # Must NOT have a Pydantic schema error about missing on/using
         schema_errors = [e for e in errors if "specify either" in e.message.lower()]
         assert len(schema_errors) == 0
 
     def test_placeholder_join_key_is_error(self, tmp_path):
-        yaml_content = '''version: "1.1"
+        yaml_content = """version: "1.1"
 source: cat.sch.tbl
 joins:
   - name: dim
@@ -59,14 +59,14 @@ dimensions:
 measures:
   - name: M1
     expr: "SUM(col2)"
-'''
+"""
         f = tmp_path / "placeholder.yaml"
         f.write_text(yaml_content)
         errors = validate_file(f)
         assert any("???" in e.message for e in errors)
 
     def test_too_many_synonyms_is_error(self, tmp_path):
-        yaml_content = '''version: "1.1"
+        yaml_content = """version: "1.1"
 source: cat.sch.tbl
 dimensions:
   - name: D1
@@ -75,14 +75,14 @@ dimensions:
 measures:
   - name: M1
     expr: "SUM(col2)"
-'''
+"""
         f = tmp_path / "synonyms.yaml"
         f.write_text(yaml_content)
         errors = validate_file(f)
         assert any("synonym" in e.message.lower() for e in errors)
 
     def test_unknown_format_type_is_error(self, tmp_path):
-        yaml_content = '''version: "1.1"
+        yaml_content = """version: "1.1"
 source: cat.sch.tbl
 dimensions:
   - name: D1
@@ -92,14 +92,14 @@ dimensions:
 measures:
   - name: M1
     expr: "SUM(col2)"
-'''
+"""
         f = tmp_path / "format.yaml"
         f.write_text(yaml_content)
         errors = validate_file(f)
         assert any("format type" in e.message.lower() for e in errors)
 
     def test_non_fqn_source_emits_warning(self, tmp_path):
-        yaml_content = '''version: "1.1"
+        yaml_content = """version: "1.1"
 source: not_a_valid_source
 dimensions:
   - name: D1
@@ -107,7 +107,7 @@ dimensions:
 measures:
   - name: M1
     expr: "SUM(col2)"
-'''
+"""
         f = tmp_path / "bad_source.yaml"
         f.write_text(yaml_content)
         errors = validate_file(f)

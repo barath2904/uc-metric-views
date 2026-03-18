@@ -1,4 +1,5 @@
 """Generate metric view YAML files from discovered table metadata."""
+
 from __future__ import annotations
 
 import logging
@@ -58,21 +59,32 @@ def spec_from_tables(
 
     for col in classified_source:
         if col.role == ColumnRole.DIMENSION:
-            dimensions.append(DimensionDef(
-                name=_humanize(col.name), expr=col.name, comment=col.comment,
-            ))
+            dimensions.append(
+                DimensionDef(
+                    name=_humanize(col.name),
+                    expr=col.name,
+                    comment=col.comment,
+                )
+            )
         elif col.role == ColumnRole.MEASURE:
-            measures.append(MeasureDef(
-                name=_humanize(col.name),
-                expr=suggest_aggregation(col.name, col.type_name),
-                comment=col.comment,
-            ))
+            measures.append(
+                MeasureDef(
+                    name=_humanize(col.name),
+                    expr=suggest_aggregation(col.name, col.type_name),
+                    comment=col.comment,
+                )
+            )
 
-    measures.insert(0, MeasureDef(
-        name="Row Count", expr="COUNT(1)", comment="Total number of records",
-    ))
+    measures.insert(
+        0,
+        MeasureDef(
+            name="Row Count",
+            expr="COUNT(1)",
+            comment="Total number of records",
+        ),
+    )
 
-    for dim in (dim_tables or []):
+    for dim in dim_tables or []:
         join_key = _find_join_key(source, dim)
 
         join_def_kwargs: dict[str, Any] = {"name": dim.table_name, "source": dim.fqn}
@@ -91,11 +103,13 @@ def spec_from_tables(
                 continue
             if col.name.lower().endswith(("_key", "_id", "_sk")):
                 continue
-            dimensions.append(DimensionDef(
-                name=_humanize(col.name),
-                expr=f"{dim.table_name}.{col.name}",
-                comment=col.comment,
-            ))
+            dimensions.append(
+                DimensionDef(
+                    name=_humanize(col.name),
+                    expr=f"{dim.table_name}.{col.name}",
+                    comment=col.comment,
+                )
+            )
 
     return MetricViewSpec(
         source=source.fqn,

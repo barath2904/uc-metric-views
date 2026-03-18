@@ -1,10 +1,12 @@
 """Shared pytest fixtures for uc-metrics tests."""
+
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock
 
-from uc_metrics.models import DiscoveredColumn, DiscoveredTable
+import pytest
+
+from metricviews.models import DiscoveredColumn, DiscoveredTable
 
 
 @pytest.fixture()

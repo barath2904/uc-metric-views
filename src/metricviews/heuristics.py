@@ -5,6 +5,7 @@ Priority order (highest wins):
   2. Type-based inference
   3. Conservative default → DIMENSION
 """
+
 from __future__ import annotations
 
 import re
@@ -15,47 +16,89 @@ from .models import ColumnRole, DiscoveredColumn
 _IGNORE_PATTERNS: list[str] = [
     r"^_.*",
     r".*_(created|updated|modified|loaded|ingested)_at$",
-    r"^etl_.*", r"^dwh_.*", r"^meta_.*",
+    r"^etl_.*",
+    r"^dwh_.*",
+    r"^meta_.*",
     r"^__.*",
 ]
 
 _DIMENSION_NAME_PATTERNS: list[str] = [
-    r".*_id$", r".*_key$", r".*_sk$",
-    r".*_code$", r".*_name$", r".*_desc$",
-    r".*_type$", r".*_status$", r".*_state$",
-    r".*_category$", r".*_class$", r".*_group$",
-    r".*_region$", r".*_country$", r".*_city$",
-    r"^is_.*", r"^has_.*", r"^flag_.*",
-    r".*_date$", r".*_month$", r".*_year$",
+    r".*_id$",
+    r".*_key$",
+    r".*_sk$",
+    r".*_code$",
+    r".*_name$",
+    r".*_desc$",
+    r".*_type$",
+    r".*_status$",
+    r".*_state$",
+    r".*_category$",
+    r".*_class$",
+    r".*_group$",
+    r".*_region$",
+    r".*_country$",
+    r".*_city$",
+    r"^is_.*",
+    r"^has_.*",
+    r"^flag_.*",
+    r".*_date$",
+    r".*_month$",
+    r".*_year$",
     r".*_at$",
 ]
 
 _MEASURE_NAME_PATTERNS: list[str] = [
-    r".*_amount$", r".*_amt$",
-    r".*_total$", r".*_sum$",
-    r".*_count$", r".*_cnt$",
-    r".*_qty$", r".*_quantity$",
-    r".*_price$", r".*_cost$", r".*_revenue$",
-    r".*_rate$", r".*_ratio$", r".*_pct$", r".*_percent$",
-    r".*_balance$", r".*_fee$", r".*_tax$",
-    r".*_weight$", r".*_volume$",
-    r".*_score$", r".*_value$",
+    r".*_amount$",
+    r".*_amt$",
+    r".*_total$",
+    r".*_sum$",
+    r".*_count$",
+    r".*_cnt$",
+    r".*_qty$",
+    r".*_quantity$",
+    r".*_price$",
+    r".*_cost$",
+    r".*_revenue$",
+    r".*_rate$",
+    r".*_ratio$",
+    r".*_pct$",
+    r".*_percent$",
+    r".*_balance$",
+    r".*_fee$",
+    r".*_tax$",
+    r".*_weight$",
+    r".*_volume$",
+    r".*_score$",
+    r".*_value$",
 ]
 
 # ── TYPE SETS ──────────────────────────────────────────────────────
 # SDK ColumnTypeName enum values + common SQL aliases for compatibility
 _DIMENSION_TYPES: set[str] = {
-    "STRING", "VARCHAR", "CHAR", "TEXT",        # SDK: STRING, CHAR
-    "DATE", "TIMESTAMP", "TIMESTAMP_NTZ",       # SDK: DATE, TIMESTAMP, TIMESTAMP_NTZ
-    "BOOLEAN", "BINARY",                        # SDK: BOOLEAN, BINARY
+    "STRING",
+    "VARCHAR",
+    "CHAR",
+    "TEXT",  # SDK: STRING, CHAR
+    "DATE",
+    "TIMESTAMP",
+    "TIMESTAMP_NTZ",  # SDK: DATE, TIMESTAMP, TIMESTAMP_NTZ
+    "BOOLEAN",
+    "BINARY",  # SDK: BOOLEAN, BINARY
 }
 
 _MEASURE_TYPES: set[str] = {
-    "INT", "INTEGER",                           # SDK: INT
-    "LONG", "BIGINT",                           # SDK: LONG
-    "SHORT", "SMALLINT",                        # SDK: SHORT
-    "BYTE", "TINYINT",                          # SDK: BYTE
-    "FLOAT", "DOUBLE", "DECIMAL", "NUMERIC",    # SDK: FLOAT, DOUBLE, DECIMAL
+    "INT",
+    "INTEGER",  # SDK: INT
+    "LONG",
+    "BIGINT",  # SDK: LONG
+    "SHORT",
+    "SMALLINT",  # SDK: SHORT
+    "BYTE",
+    "TINYINT",  # SDK: BYTE
+    "FLOAT",
+    "DOUBLE",
+    "DECIMAL",
+    "NUMERIC",  # SDK: FLOAT, DOUBLE, DECIMAL
 }
 
 

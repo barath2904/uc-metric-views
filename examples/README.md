@@ -1,12 +1,12 @@
-# uc-metrics Examples
+# uc-metric-views Examples
 
-Ready-to-use metric view YAML files for trying `uc-metrics` on any Databricks workspace (including the free Community Edition).
+Ready-to-use metric view YAML files for trying `uc-metric-views` on any Databricks workspace (including the free Community Edition).
 
 ## Prerequisites
 
 1. A Databricks workspace with a SQL warehouse
 2. A catalog and schema where you have `CREATE VIEW` permission
-3. `uc-metrics` installed: `pip install uc-metrics`
+3. `uc-metric-views` installed: `pip install uc-metric-views`
 4. Auth configured via environment variables:
    ```bash
    export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"

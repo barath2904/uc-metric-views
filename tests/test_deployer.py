@@ -1,12 +1,13 @@
 """Tests for Databricks deployer — all SDK calls mocked."""
+
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
-from uc_metrics.deployer import build_ddl, deploy_directory, deploy_file
+from metricviews.deployer import build_ddl, deploy_directory, deploy_file
 
-_VALID_YAML = '''version: "1.1"
+_VALID_YAML = """version: "1.1"
 source: cat.sch.tbl
 dimensions:
   - name: D1
@@ -14,7 +15,7 @@ dimensions:
 measures:
   - name: M1
     expr: "SUM(col2)"
-'''
+"""
 
 
 class TestBuildDdl:
@@ -95,8 +96,9 @@ class TestDeployFile:
         f.write_text(_VALID_YAML)
         client = MagicMock()
 
-        result = deploy_file(client, f, "cat", "sch", "wh123",
-                             view_name="custom_name", dry_run=True)
+        result = deploy_file(
+            client, f, "cat", "sch", "wh123", view_name="custom_name", dry_run=True
+        )
         assert result.view_fqn == "cat.sch.custom_name"
 
     def test_deploy_file_validates_before_deploying(self, tmp_path: Path):

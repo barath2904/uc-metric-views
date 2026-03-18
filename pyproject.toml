@@ -3,7 +3,7 @@ requires = ["hatchling>=1.21,<2.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "uc-metrics"
+name = "uc-metric-views"
 version = "0.1.0"
 description = "Generate, validate, and deploy Databricks Unity Catalog metric views"
 readme = "README.md"
@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bk/uc-metrics"
-Source = "https://github.com/bk/uc-metrics"
-Issues = "https://github.com/bk/uc-metrics/issues"
+Homepage = "https://github.com/bk/uc-metric-views"
+Source = "https://github.com/bk/uc-metric-views"
+Issues = "https://github.com/bk/uc-metric-views/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -41,7 +41,10 @@ dev = [
 ]
 
 [project.scripts]
-ucm = "uc_metrics.cli:cli"
+ucm = "metricviews.cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/metricviews"]
 
 [tool.ruff]
 target-version = "py310"
@@ -70,10 +73,10 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=uc_metrics --cov-report=term-missing"
+addopts = "--cov=metricviews --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["uc_metrics"]
+source = ["metricviews"]
 
 [tool.coverage.report]
 show_missing = true

@@ -1,10 +1,11 @@
 """Tests for CLI — uses Click CliRunner, no real Databricks needed."""
+
 from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from uc_metrics.cli import cli
+from metricviews.cli import cli
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -25,17 +26,26 @@ class TestValidateCommand:
 
     def test_invalid_file_returns_nonzero(self):
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "validate", str(FIXTURES / "invalid_missing_measures.yaml"),
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "validate",
+                str(FIXTURES / "invalid_missing_measures.yaml"),
+            ],
+        )
         assert result.exit_code != 0
 
     def test_strict_mode_fails_on_warnings(self):
         runner = CliRunner()
         # with_window_measures.yaml emits experimental warnings
-        result = runner.invoke(cli, [
-            "validate", str(FIXTURES / "with_window_measures.yaml"), "--strict",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "validate",
+                str(FIXTURES / "with_window_measures.yaml"),
+                "--strict",
+            ],
+        )
         assert result.exit_code != 0
 
     def test_directory_validation(self):
@@ -51,13 +61,20 @@ class TestDeployCommand:
         f.write_text((FIXTURES / "sample_orders.yaml").read_text())
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "deploy", str(f),
-            "--catalog", "dev",
-            "--schema", "metrics",
-            "--warehouse-id", "wh123",
-            "--dry-run",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "deploy",
+                str(f),
+                "--catalog",
+                "dev",
+                "--schema",
+                "metrics",
+                "--warehouse-id",
+                "wh123",
+                "--dry-run",
+            ],
+        )
         assert result.exit_code == 0
         assert "dry-run" in result.output.lower() or "dry_run" in result.output.lower()
 
@@ -65,31 +82,48 @@ class TestDeployCommand:
 class TestGenerateCommand:
     def test_rejects_bad_source_fqn(self):
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "generate", "--source", "not_valid", "--output", "/tmp/test.yaml",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "generate",
+                "--source",
+                "not_valid",
+                "--output",
+                "/tmp/test.yaml",
+            ],
+        )
         assert result.exit_code != 0
         assert "catalog.schema.table" in result.output or "Bad Parameter" in result.output
 
 
 class TestSdkErrorWrapping:
-    @patch("uc_metrics.cli.introspector")
+    @patch("metricviews.cli.introspector")
     def test_auth_failure_shows_friendly_message(self, mock_intro):
         mock_intro.create_client.side_effect = Exception("401 Unauthorized: InvalidAccessToken")
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "inspect", "--source", "cat.sch.tbl",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "inspect",
+                "--source",
+                "cat.sch.tbl",
+            ],
+        )
         assert result.exit_code != 0
         assert "Authentication failed" in result.output
 
-    @patch("uc_metrics.cli.introspector")
+    @patch("metricviews.cli.introspector")
     def test_connection_error_shows_friendly_message(self, mock_intro):
         err = ConnectionError("Failed to connect")
         mock_intro.create_client.side_effect = err
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "inspect", "--source", "cat.sch.tbl",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "inspect",
+                "--source",
+                "cat.sch.tbl",
+            ],
+        )
         assert result.exit_code != 0
         assert "Cannot reach" in result.output or "API error" in result.output

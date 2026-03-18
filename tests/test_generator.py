@@ -1,8 +1,9 @@
 """Tests for metric view YAML generation."""
+
 from pathlib import Path
 
-from uc_metrics.generator import spec_from_tables, spec_to_yaml, write_yaml_file
-from uc_metrics.models import (
+from metricviews.generator import spec_from_tables, spec_to_yaml, write_yaml_file
+from metricviews.models import (
     DimensionDef,
     DiscoveredColumn,
     DiscoveredTable,
@@ -13,7 +14,9 @@ from uc_metrics.models import (
 
 def _make_source() -> DiscoveredTable:
     return DiscoveredTable(
-        catalog="cat", schema_name="sch", table_name="fct_orders",
+        catalog="cat",
+        schema_name="sch",
+        table_name="fct_orders",
         columns=[
             DiscoveredColumn(name="order_id", type_name="BIGINT"),
             DiscoveredColumn(name="order_date", type_name="DATE"),
@@ -25,7 +28,9 @@ def _make_source() -> DiscoveredTable:
 
 def _make_dim() -> DiscoveredTable:
     return DiscoveredTable(
-        catalog="cat", schema_name="sch", table_name="dim_customer",
+        catalog="cat",
+        schema_name="sch",
+        table_name="dim_customer",
         columns=[
             DiscoveredColumn(name="customer_id", type_name="BIGINT"),
             DiscoveredColumn(name="customer_name", type_name="STRING"),
@@ -52,14 +57,18 @@ class TestSpecFromTables:
 
     def test_join_auto_detection_shared_key(self):
         source = DiscoveredTable(
-            catalog="cat", schema_name="sch", table_name="fct",
+            catalog="cat",
+            schema_name="sch",
+            table_name="fct",
             columns=[
                 DiscoveredColumn(name="customer_id", type_name="BIGINT"),
                 DiscoveredColumn(name="amount", type_name="DECIMAL"),
             ],
         )
         dim = DiscoveredTable(
-            catalog="cat", schema_name="sch", table_name="dim_customer",
+            catalog="cat",
+            schema_name="sch",
+            table_name="dim_customer",
             columns=[
                 DiscoveredColumn(name="customer_id", type_name="BIGINT"),
                 DiscoveredColumn(name="customer_name", type_name="STRING"),
@@ -71,11 +80,15 @@ class TestSpecFromTables:
 
     def test_join_placeholder_when_no_key_found(self):
         source = DiscoveredTable(
-            catalog="cat", schema_name="sch", table_name="fct",
+            catalog="cat",
+            schema_name="sch",
+            table_name="fct",
             columns=[DiscoveredColumn(name="amount", type_name="DECIMAL")],
         )
         dim = DiscoveredTable(
-            catalog="cat", schema_name="sch", table_name="dim_other",
+            catalog="cat",
+            schema_name="sch",
+            table_name="dim_other",
             columns=[DiscoveredColumn(name="name", type_name="STRING")],
         )
         spec = spec_from_tables(source, [dim])
@@ -113,18 +126,24 @@ class TestSpecToYaml:
 
     def test_snowflake_join_nesting_indentation(self):
         """Nested joins (snowflake schema) must have correct indentation."""
-        from uc_metrics.models import JoinDef
+        from metricviews.models import JoinDef
 
         spec = MetricViewSpec(
             source="cat.sch.tbl",
-            joins=[JoinDef(
-                name="customer", source="cat.sch.customer",
-                on="source.cust_key = customer.cust_key",
-                joins=[JoinDef(
-                    name="nation", source="cat.sch.nation",
-                    on="customer.nation_key = nation.nation_key",
-                )],
-            )],
+            joins=[
+                JoinDef(
+                    name="customer",
+                    source="cat.sch.customer",
+                    on="source.cust_key = customer.cust_key",
+                    joins=[
+                        JoinDef(
+                            name="nation",
+                            source="cat.sch.nation",
+                            on="customer.nation_key = nation.nation_key",
+                        )
+                    ],
+                )
+            ],
             dimensions=[DimensionDef(name="D1", expr="col1")],
             measures=[MeasureDef(name="M1", expr="SUM(col2)")],
         )

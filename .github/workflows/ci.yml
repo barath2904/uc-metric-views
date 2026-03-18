@@ -22,7 +22,7 @@ jobs:
       - name: Type check
         run: mypy src/
       - name: Unit tests
-        run: pytest tests/ -v --cov=uc_metrics --cov-report=term
+        run: pytest tests/ -v --cov=metricviews --cov-report=term
 
   validate:
     runs-on: ubuntu-latest

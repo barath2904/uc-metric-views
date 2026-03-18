@@ -1,4 +1,5 @@
 """Deploy metric view YAML files to Databricks Unity Catalog."""
+
 from __future__ import annotations
 
 import logging
@@ -46,12 +47,7 @@ def build_ddl(
         )
 
     fqn = f"`{catalog}`.`{schema}`.`{view_name}`"
-    return (
-        f"CREATE OR REPLACE VIEW {fqn}\n"
-        f"WITH METRICS LANGUAGE YAML AS $$\n"
-        f"{yaml_content}\n"
-        f"$$"
-    )
+    return f"CREATE OR REPLACE VIEW {fqn}\nWITH METRICS LANGUAGE YAML AS $$\n{yaml_content}\n$$"
 
 
 def _view_name_from_path(yaml_path: Path) -> str:
@@ -77,8 +73,10 @@ def deploy_file(
     val_errors = [e for e in validate_file(path) if e.severity == "error"]
     if val_errors:
         return DeployResult(
-            yaml_file=path.name, view_fqn=fqn,
-            status="failed", sql="",
+            yaml_file=path.name,
+            view_fqn=fqn,
+            status="failed",
+            sql="",
             error=f"Validation failed: {val_errors[0].message}",
         )
 
@@ -88,30 +86,44 @@ def deploy_file(
     if dry_run:
         logger.info(f"[DRY RUN] Would deploy {path.name} → {fqn}")
         return DeployResult(
-            yaml_file=path.name, view_fqn=fqn, status="dry_run", sql=ddl,
+            yaml_file=path.name,
+            view_fqn=fqn,
+            status="dry_run",
+            sql=ddl,
         )
 
     try:
         start = time.monotonic()
         response = client.statement_execution.execute_statement(
-            warehouse_id=warehouse_id, statement=ddl, wait_timeout="50s",
+            warehouse_id=warehouse_id,
+            statement=ddl,
+            wait_timeout="50s",
         )
 
         if response.status and response.status.state == StatementState.SUCCEEDED:
             elapsed = int((time.monotonic() - start) * 1000)
             logger.info(f"Deployed {path.name} → {fqn} ({elapsed}ms)")
             return DeployResult(
-                yaml_file=path.name, view_fqn=fqn, status="success", sql=ddl,
+                yaml_file=path.name,
+                view_fqn=fqn,
+                status="success",
+                sql=ddl,
             )
         error_msg = str(response.status.error) if response.status else "Unknown"
         return DeployResult(
-            yaml_file=path.name, view_fqn=fqn,
-            status="failed", sql=ddl, error=error_msg,
+            yaml_file=path.name,
+            view_fqn=fqn,
+            status="failed",
+            sql=ddl,
+            error=error_msg,
         )
     except Exception as e:
         return DeployResult(
-            yaml_file=path.name, view_fqn=fqn,
-            status="failed", sql=ddl, error=str(e),
+            yaml_file=path.name,
+            view_fqn=fqn,
+            status="failed",
+            sql=ddl,
+            error=str(e),
         )
 
 
@@ -131,11 +143,15 @@ def deploy_directory(
     for f in yaml_files:
         errors = [e for e in validate_file(f) if e.severity == "error"]
         if errors:
-            results.append(DeployResult(
-                yaml_file=f.name, view_fqn="",
-                status="failed", sql="",
-                error=f"Validation failed: {errors[0].message}",
-            ))
+            results.append(
+                DeployResult(
+                    yaml_file=f.name,
+                    view_fqn="",
+                    status="failed",
+                    sql="",
+                    error=f"Validation failed: {errors[0].message}",
+                )
+            )
             continue
         results.append(deploy_file(client, f, catalog, schema, warehouse_id, dry_run=dry_run))
 

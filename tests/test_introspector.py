@@ -1,18 +1,20 @@
 """Tests for Unity Catalog introspector — all SDK calls mocked."""
+
 from unittest.mock import MagicMock, patch
 
-from uc_metrics.introspector import create_client, discover_table, list_tables
+from metricviews.introspector import create_client, discover_table, list_tables
 
 
 class TestCreateClient:
-    @patch("uc_metrics.introspector.WorkspaceClient")
+    @patch("metricviews.introspector.WorkspaceClient")
     def test_creates_client_with_explicit_args(self, mock_ws):
         create_client(host="https://test.cloud.databricks.com", token="dapi123")
         mock_ws.assert_called_once_with(
-            host="https://test.cloud.databricks.com", token="dapi123",
+            host="https://test.cloud.databricks.com",
+            token="dapi123",
         )
 
-    @patch("uc_metrics.introspector.WorkspaceClient")
+    @patch("metricviews.introspector.WorkspaceClient")
     def test_creates_client_with_defaults(self, mock_ws):
         create_client()
         mock_ws.assert_called_once_with()
