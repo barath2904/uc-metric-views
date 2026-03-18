@@ -34,3 +34,6 @@ venv/
 
 # OS
 .DS_Store
+
+# local docs & references
+local/
