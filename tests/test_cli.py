@@ -78,6 +78,46 @@ class TestDeployCommand:
         assert result.exit_code == 0
         assert "dry-run" in result.output.lower() or "dry_run" in result.output.lower()
 
+    def test_dry_run_without_warehouse_id(self, tmp_path: Path):
+        """--dry-run should not require --warehouse-id."""
+        f = tmp_path / "test.yaml"
+        f.write_text((FIXTURES / "sample_orders.yaml").read_text())
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "deploy",
+                str(f),
+                "--catalog",
+                "dev",
+                "--schema",
+                "metrics",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0
+
+    def test_live_deploy_requires_warehouse_id(self, tmp_path: Path):
+        """Without --dry-run, --warehouse-id is mandatory."""
+        f = tmp_path / "test.yaml"
+        f.write_text((FIXTURES / "sample_orders.yaml").read_text())
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "deploy",
+                str(f),
+                "--catalog",
+                "dev",
+                "--schema",
+                "metrics",
+            ],
+        )
+        assert result.exit_code != 0
+        assert "warehouse-id" in result.output.lower()
+
 
 class TestGenerateCommand:
     def test_rejects_bad_source_fqn(self):
@@ -145,3 +185,22 @@ class TestSdkErrorWrapping:
         )
         assert result.exit_code != 0
         assert "Cannot reach" in result.output or "API error" in result.output
+
+    @patch("metricviews.cli.introspector")
+    def test_unknown_error_hides_details_without_verbose(self, mock_intro):
+        """Security: unrecognized errors must also suppress raw details."""
+        mock_intro.create_client.side_effect = Exception("secret-token-xyz leaked in traceback")
+        runner = CliRunner()
+        result = runner.invoke(cli, ["inspect", "--source", "cat.sch.tbl"])
+        assert result.exit_code != 0
+        assert "secret-token-xyz" not in result.output
+        assert "--verbose" in result.output
+
+    @patch("metricviews.cli.introspector")
+    def test_unknown_error_shows_details_with_verbose(self, mock_intro):
+        """With --verbose, unrecognized errors show full details."""
+        mock_intro.create_client.side_effect = Exception("internal details here")
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--verbose", "inspect", "--source", "cat.sch.tbl"])
+        assert result.exit_code != 0
+        assert "internal details here" in result.output
