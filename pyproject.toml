@@ -29,8 +29,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/bk/uc-metrics"
-"Source Code" = "https://github.com/bk/uc-metrics"
-"Bug Tracker" = "https://github.com/bk/uc-metrics/issues"
+Source = "https://github.com/bk/uc-metrics"
+Issues = "https://github.com/bk/uc-metrics/issues"
 
 [project.optional-dependencies]
 dev = [
