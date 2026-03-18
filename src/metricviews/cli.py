@@ -35,7 +35,9 @@ def _handle_sdk_error(e: Exception, verbose: bool = False) -> NoReturn:
         raise DatabricksError(
             f"Cannot reach Databricks host. Check DATABRICKS_HOST and network.{details}"
         )
-    raise DatabricksError(f"Databricks API error: {msg}")
+    if details:
+        raise DatabricksError(f"Databricks API error.{details}")
+    raise DatabricksError("Databricks API error. Use --verbose for details.")
 
 
 @click.group()
@@ -180,7 +182,12 @@ def validate(ctx: click.Context, path: str, strict: bool) -> None:
 @click.argument("path", type=click.Path(exists=True))
 @click.option("--catalog", required=True, help="Target catalog")
 @click.option("--schema", required=True, help="Target schema")
-@click.option("--warehouse-id", required=True, envvar="DATABRICKS_WAREHOUSE_ID")
+@click.option(
+    "--warehouse-id",
+    default=None,
+    envvar="DATABRICKS_WAREHOUSE_ID",
+    help="SQL warehouse ID (required unless --dry-run)",
+)
 @click.option("--dry-run", is_flag=True, help="Print SQL without executing")
 @click.option("--host", default=None, envvar="DATABRICKS_HOST")
 @click.option("--token", default=None, envvar="DATABRICKS_TOKEN")
@@ -190,26 +197,30 @@ def deploy(
     path: str,
     catalog: str,
     schema: str,
-    warehouse_id: str,
+    warehouse_id: str | None,
     dry_run: bool,
     host: str | None,
     token: str | None,
 ) -> None:
     """Deploy YAML metric views to Databricks Unity Catalog."""
-    # Skip client creation for dry_run — no SDK calls will be made
+    if not dry_run and not warehouse_id:
+        raise click.UsageError("--warehouse-id is required unless --dry-run is set")
+
     if dry_run:
         client = None  # not used in dry_run path
+        wh_id = warehouse_id or ""
     else:
         try:
             client = introspector.create_client(host, token)
         except Exception as e:
             _handle_sdk_error(e, verbose=ctx.obj.get("verbose", False))
+        wh_id = warehouse_id or ""  # validated above
 
     p = Path(path)
     results = (
-        deployer.deploy_directory(client, p, catalog, schema, warehouse_id, dry_run=dry_run)  # type: ignore[arg-type]
+        deployer.deploy_directory(client, p, catalog, schema, wh_id, dry_run=dry_run)  # type: ignore[arg-type]
         if p.is_dir()
-        else [deployer.deploy_file(client, p, catalog, schema, warehouse_id, dry_run=dry_run)]  # type: ignore[arg-type]
+        else [deployer.deploy_file(client, p, catalog, schema, wh_id, dry_run=dry_run)]  # type: ignore[arg-type]
     )
 
     success = sum(1 for r in results if r.status == "success")
