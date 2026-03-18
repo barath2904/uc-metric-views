@@ -1,0 +1,62 @@
+# Demonstrates v1.1 semantic metadata: display_name, format, synonyms.
+# These fields power AI/BI dashboards and Genie discovery.
+#
+# Deploy:
+#   ucm deploy examples/with_semantic_metadata.yaml \
+#     --catalog your_catalog --schema your_schema --warehouse-id YOUR_ID
+#
+version: "1.1"
+comment: "TPC-H orders with rich semantic metadata for AI/BI tools"
+source: samples.tpch.orders
+
+filter: "o_orderdate >= '1995-01-01'"
+
+dimensions:
+  - name: Order Month
+    expr: "DATE_TRUNC('MONTH', o_orderdate)"
+    display_name: "Order Month"
+    comment: "Month the order was placed"
+    format:
+      type: date
+      date_format: year_month_day
+    synonyms:
+      - "month"
+      - "order month"
+
+  - name: Order Priority
+    expr: "o_orderpriority"
+    display_name: "Priority"
+    comment: "Priority level assigned to the order"
+    synonyms:
+      - "priority"
+      - "urgency"
+
+measures:
+  - name: Order Count
+    expr: "COUNT(1)"
+    display_name: "Number of Orders"
+    comment: "Total orders in the period"
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - "orders"
+      - "order volume"
+      - "count"
+
+  - name: Total Revenue
+    expr: "SUM(o_totalprice)"
+    display_name: "Total Revenue"
+    comment: "Sum of all order prices"
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - "revenue"
+      - "total sales"
+      - "sales"

@@ -1,0 +1,45 @@
+# Star schema — fact table joined to a dimension table.
+# Uses the TPC-H sample data available in the samples catalog.
+#
+# Deploy:
+#   ucm deploy examples/star_schema_joins.yaml \
+#     --catalog your_catalog --schema your_schema --warehouse-id YOUR_ID
+#
+version: "1.1"
+comment: "TPC-H order metrics with customer dimension"
+source: samples.tpch.orders
+
+joins:
+  - name: customer
+    source: samples.tpch.customer
+    "on": source.o_custkey = customer.c_custkey
+
+dimensions:
+  - name: Order Date
+    expr: "o_orderdate"
+    comment: "Date the order was placed"
+
+  - name: Order Priority
+    expr: "o_orderpriority"
+    comment: "Priority level of the order"
+
+  - name: Customer Name
+    expr: "customer.c_name"
+    comment: "Name of the customer"
+
+  - name: Market Segment
+    expr: "customer.c_mktsegment"
+    comment: "Customer market segment"
+
+measures:
+  - name: Order Count
+    expr: "COUNT(1)"
+    comment: "Total number of orders"
+
+  - name: Total Revenue
+    expr: "SUM(o_totalprice)"
+    comment: "Sum of total order prices"
+
+  - name: Average Order Value
+    expr: "AVG(o_totalprice)"
+    comment: "Average price per order"
