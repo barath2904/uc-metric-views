@@ -3,6 +3,7 @@
 [![CI](https://github.com/barath2904/uc-metric-views/actions/workflows/ci.yml/badge.svg)](https://github.com/barath2904/uc-metric-views/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/uc-metric-views)](https://pypi.org/project/uc-metric-views/)
 [![Python](https://img.shields.io/pypi/pyversions/uc-metric-views)](https://pypi.org/project/uc-metric-views/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Generate, validate, and deploy [Databricks Unity Catalog metric views](https://docs.databricks.com/en/sql/language-manual/sql-ref-metric-view.html) from YAML definitions.
 
@@ -10,7 +11,22 @@ A metric view is a reusable semantic layer object in Databricks — it defines d
 
 ---
 
-## Installation
+## How it works
+
+```mermaid
+flowchart LR
+    A[("Databricks\nTable")] -->|ucm inspect| B["Column\nInventory"]
+    B -->|ucm generate| C[/"metric_view.yaml"/]
+    C -->|human edits| C
+    C -->|ucm validate| D{Valid?}
+    D -->|no — fix errors| C
+    D -->|yes| E[ucm deploy]
+    E --> F[("Unity Catalog\nMetric View")]
+```
+
+---
+
+## ⚙️ Installation
 
 ```bash
 pip install uc-metric-views
@@ -18,7 +34,7 @@ pip install uc-metric-views
 
 ---
 
-## Authentication
+## 🔐 Authentication
 
 Set credentials before running any command that connects to Databricks.
 
@@ -45,9 +61,7 @@ PATs can also be passed via `--host` and `--token` CLI flags. `~/.databrickscfg`
 
 ---
 
-## Usage
-
-### CLI
+## 🖥️ CLI
 
 #### 1. Inspect a table
 
@@ -80,7 +94,7 @@ ucm validate ./metric_views/order_metrics.yaml  # validate a single file
 ucm validate ./metric_views/ --strict           # treat warnings as errors (CI)
 ```
 
-No Databricks connection needed for validation.
+> No Databricks connection needed for validation.
 
 #### 4. Deploy
 
@@ -98,9 +112,9 @@ ucm deploy ./metric_views/ \
 
 ---
 
-### GitHub Actions
+## 🔁 GitHub Actions
 
-Use `ucm` in your own repo's CI/CD workflows to validate and deploy metric view YAML files.
+Use `ucm` in your own repo's CI/CD workflows to validate and deploy metric view YAML files on every merge.
 
 ```yaml
 # .github/workflows/deploy-metrics.yml
@@ -137,15 +151,15 @@ jobs:
 
 ---
 
-### Python API
+## 🐍 Python API
 
 `metricviews` can also be used programmatically:
 
 ```python
-from metricviews.validator import validate_file, validate_directory
-from metricviews.deployer import deploy_file
+from metricviews.validator import validate_file
 from metricviews.introspector import create_client, discover_table
 from metricviews.generator import spec_from_tables, write_yaml_file
+from metricviews.deployer import deploy_file
 
 # Validate a file
 errors = validate_file("./metric_views/order_metrics.yaml")
@@ -159,8 +173,6 @@ spec = spec_from_tables(source)
 write_yaml_file(spec, "./metric_views/order_metrics.yaml")
 
 # Deploy a file
-from metricviews.introspector import create_client
-client = create_client()
 result = deploy_file(client, "./metric_views/order_metrics.yaml",
                      catalog="my_catalog", schema="my_schema",
                      warehouse_id="abc123")
@@ -169,7 +181,7 @@ print(result.status)  # "success" | "failed" | "dry_run"
 
 ---
 
-## Example YAML
+## 📄 Example YAML
 
 ```yaml
 version: "1.1"
@@ -195,25 +207,28 @@ More examples in the [`examples/`](examples/) directory — all use the Databric
 
 ---
 
-## Validation Checks
+## ✅ Validation Checks
 
-`ucm validate` runs 11 checks on each YAML file:
+`ucm validate` runs 11 checks on each YAML file. Use `--strict` to treat warnings as errors in CI.
+
+<details>
+<summary>View all 11 checks</summary>
 
 | Severity | Check |
 |----------|-------|
-| error | Valid YAML syntax |
-| error | Pydantic schema validation (required fields, types) |
-| error | Version is supported (`"1.1"`) |
-| error | Format type is valid |
-| error | Synonym count ≤ 10 per column |
-| error | Join keys contain no `???` placeholders |
-| warning | Source is a fully-qualified table name or SQL query |
-| warning | Measures contain aggregate functions |
-| warning | `materialization` is an experimental feature |
-| warning | `window` measures are an experimental feature |
-| warning | Bare `on:` key rewritten (YAML 1.1 parses it as boolean) |
+| 🔴 error | Valid YAML syntax |
+| 🔴 error | Schema validation (required fields, types) |
+| 🔴 error | Version is supported (`"1.1"`) |
+| 🔴 error | Format type is valid |
+| 🔴 error | Synonym count ≤ 10 per column |
+| 🔴 error | Join keys contain no `???` placeholders |
+| 🟡 warning | Source is a fully-qualified table name or SQL query |
+| 🟡 warning | Measures contain aggregate functions |
+| 🟡 warning | `materialization` is an experimental feature |
+| 🟡 warning | `window` measures are an experimental feature |
+| 🟡 warning | Bare `on:` key rewritten (YAML 1.1 parses it as boolean) |
 
-Use `--strict` to treat warnings as errors in CI.
+</details>
 
 ---
 
@@ -221,7 +236,7 @@ Use `--strict` to treat warnings as errors in CI.
 
 - Python 3.10+
 - A Databricks workspace with Unity Catalog enabled
-- `validate` works offline — no Databricks connection needed
+- `ucm validate` works offline — no Databricks connection needed
 
 ## License
 
