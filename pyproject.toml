@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "uc-metric-views"
 version = "0.1.0"
-description = "Generate, validate, and deploy Databricks Unity Catalog metric views"
+description = "Generate, validate and deploy Databricks Unity Catalog Metric Views"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [{ name = "BK" }]
+authors = [{ name = "Barath B K" }]
 keywords = ["databricks", "metric-views", "unity-catalog", "semantic-layer"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bk/uc-metric-views"
-Source = "https://github.com/bk/uc-metric-views"
-Issues = "https://github.com/bk/uc-metric-views/issues"
+Homepage = "https://github.com/barath2904/uc-metric-views"
+Source = "https://github.com/barath2904/uc-metric-views"
+Issues = "https://github.com/barath2904/uc-metric-views/issues"
 
 [project.optional-dependencies]
 dev = [
