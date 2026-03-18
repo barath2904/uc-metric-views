@@ -1,7 +1,7 @@
 name: CI
 on:
   pull_request:
-    paths: ["src/**", "tests/**", "metric_views/**", "examples/**", "pyproject.toml"]
+    paths: ["src/**", "tests/**", "examples/**", "pyproject.toml"]
 
 jobs:
   test:
@@ -26,11 +26,11 @@ jobs:
 
   validate:
     runs-on: ubuntu-latest
-    if: hashFiles('metric_views/*.yaml') != ''
+    if: hashFiles('examples/*.yaml') != ''
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install -e .
-      - run: ucm validate ./metric_views/ --strict
+      - run: ucm validate ./examples/ --strict
