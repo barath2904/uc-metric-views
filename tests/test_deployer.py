@@ -128,6 +128,25 @@ class TestDeployFile:
         assert result.status == "failed"
         assert "PARSE_SYNTAX_ERROR" in result.error  # type: ignore[operator]
 
+    def test_failed_state_with_no_error_detail(self, tmp_path: Path):
+        """SDK returns FAILED state but error field is None — must not show 'None'."""
+        from databricks.sdk.service.sql import StatementState
+
+        f = tmp_path / "test.yaml"
+        f.write_text(_VALID_YAML)
+
+        response = MagicMock()
+        response.status.state = StatementState.FAILED
+        response.status.error = None
+
+        client = MagicMock()
+        client.statement_execution.execute_statement.return_value = response
+
+        result = deploy_file(client, f, "cat", "sch", "wh123")
+        assert result.status == "failed"
+        assert result.error != "None"
+        assert "did not succeed" in result.error  # type: ignore[operator]
+
     def test_deploy_file_validates_before_deploying(self, tmp_path: Path):
         """deploy_file must validate — invalid YAML should fail without executing."""
         bad = tmp_path / "bad.yaml"

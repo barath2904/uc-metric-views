@@ -53,6 +53,7 @@ _PYDANTIC_TYPE_MESSAGES: dict[str, str] = {
     "dict_type": "must be a mapping",
     "bool_type": "must be true or false",
     "int_type": "must be an integer",
+    "literal_error": "must be 'aggregated' or 'unaggregated'",
     "value_error": "",  # use msg as-is
 }
 

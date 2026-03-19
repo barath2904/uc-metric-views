@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from .validator import validate_directory as validate_directory
     from .validator import validate_file as validate_file
 
+__version__: str
+
 __all__ = [
     "create_client",
     "deploy_directory",
@@ -35,6 +37,10 @@ __all__ = [
 
 def __getattr__(name: str) -> object:
     """Lazy import public API functions on first access."""
+    if name == "__version__":
+        from importlib.metadata import version as pkg_version
+
+        return pkg_version("uc-metric-views")
     if name in ("spec_from_tables", "write_yaml_file"):
         from .generator import spec_from_tables, write_yaml_file
 

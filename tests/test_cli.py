@@ -18,6 +18,11 @@ class TestVersion:
         assert result.exit_code == 0
         assert re.search(r"\d+\.\d+\.\d+", result.output)
 
+    def test_package_exposes_version(self):
+        import metricviews
+
+        assert re.match(r"\d+\.\d+\.\d+", metricviews.__version__)
+
 
 class TestValidateCommand:
     def test_valid_file_returns_zero(self):

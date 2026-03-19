@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+
+
+def _strip_str(v: object) -> object:
+    """Strip whitespace before min_length check — '   ' becomes '' and fails."""
+    return v.strip() if isinstance(v, str) else v
+
+
+# Required string fields: strip whitespace so min_length=1 rejects "   ".
+StrippedStr = Annotated[str, BeforeValidator(_strip_str), Field(min_length=1)]
 
 
 class ColumnRole(str, Enum):
@@ -24,8 +33,8 @@ class WindowSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    order: str = Field(min_length=1)
-    range: str = Field(min_length=1)
+    order: StrippedStr
+    range: StrippedStr
     semiadditive: str | None = None
 
 
@@ -34,8 +43,8 @@ class DimensionDef(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1)
-    expr: str = Field(min_length=1)
+    name: StrippedStr
+    expr: StrippedStr
     comment: str | None = None
     display_name: str | None = None
     format: dict[str, Any] | None = None
@@ -47,8 +56,8 @@ class MeasureDef(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1)
-    expr: str = Field(min_length=1)
+    name: StrippedStr
+    expr: StrippedStr
     comment: str | None = None
     display_name: str | None = None
     format: dict[str, Any] | None = None
@@ -61,8 +70,8 @@ class JoinDef(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1)
-    source: str = Field(min_length=1)
+    name: StrippedStr
+    source: StrippedStr
     on: str | None = None
     using: list[str] | None = None
     joins: list[JoinDef] | None = None
@@ -86,8 +95,8 @@ class MaterializedViewDef(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1)
-    type: str = Field(min_length=1)
+    name: StrippedStr
+    type: Literal["aggregated", "unaggregated"]
     dimensions: list[str] | None = None
     measures: list[str] | None = None
 

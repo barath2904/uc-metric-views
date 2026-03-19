@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from metricviews.generator import spec_from_tables, spec_to_yaml, write_yaml_file
+from metricviews.generator import _humanize, spec_from_tables, spec_to_yaml, write_yaml_file
 from metricviews.models import (
     DimensionDef,
     DiscoveredColumn,
@@ -101,6 +101,20 @@ class TestSpecFromTables:
         assert "Customer Name" in dim_names
         # customer_id is a key column — should NOT appear as a dimension from the dim table
         assert "Customer Id" not in dim_names
+
+
+class TestHumanize:
+    def test_standard_column_name(self):
+        assert _humanize("total_order_amount") == "Total Order Amount"
+
+    def test_trailing_underscore_no_trailing_space(self):
+        assert _humanize("test_") == "Test"
+
+    def test_leading_underscore_no_leading_space(self):
+        assert _humanize("_test") == "Test"
+
+    def test_multiple_underscores(self):
+        assert _humanize("___") == ""
 
 
 class TestSpecToYaml:
