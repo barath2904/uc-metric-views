@@ -113,6 +113,31 @@ measures:
         errors = validate_file(f)
         assert any("version" in e.message.lower() and "2.0" in e.message for e in errors)
 
+    def test_schema_error_messages_are_human_readable(self, tmp_path):
+        """Pydantic errors must not expose input_value dumps or pydantic.dev URLs."""
+        yaml_content = """version: "1.1"
+source: cat.sch.tbl
+dimensionss:
+  - name: D1
+    expr: "col1"
+measures:
+  - name: M1
+    expr: "SUM(col2)"
+"""
+        f = tmp_path / "typo.yaml"
+        f.write_text(yaml_content)
+        errors = validate_file(f)
+        schema_errors = [e for e in errors if e.severity == "error"]
+        assert len(schema_errors) > 0
+        for e in schema_errors:
+            assert "input_value" not in e.message
+            assert "pydantic.dev" not in e.message
+            assert "input_type" not in e.message
+        # Should mention the unknown field and the missing field
+        combined = " ".join(e.message for e in schema_errors)
+        assert "dimensionss" in combined
+        assert "dimensions" in combined
+
     def test_non_fqn_source_emits_warning(self, tmp_path):
         yaml_content = """version: "1.1"
 source: not_a_valid_source

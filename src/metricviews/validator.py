@@ -76,6 +76,38 @@ def _fix_yaml_on_boolean_keys(raw: dict[str, Any]) -> list[YamlValidationError]:
     return warnings
 
 
+_PYDANTIC_TYPE_MESSAGES: dict[str, str] = {
+    "missing": "required field missing",
+    "extra_forbidden": "unknown field — check for typos",
+    "string_type": "must be a string",
+    "list_type": "must be a list",
+    "dict_type": "must be a mapping",
+    "bool_type": "must be true or false",
+    "int_type": "must be an integer",
+    "value_error": "",  # use msg as-is
+}
+
+
+def _format_pydantic_errors(
+    filename: str, exc: pydantic.ValidationError
+) -> list[YamlValidationError]:
+    """Convert a Pydantic ValidationError into clean, user-facing error messages.
+
+    Drops input_value dumps, pydantic.dev URLs, and internal type codes.
+    Returns one YamlValidationError per Pydantic error.
+    """
+    out = []
+    for err in exc.errors():
+        loc = " → ".join(str(p) for p in err["loc"]) if err["loc"] else "root"
+        err_type = err["type"]
+        if err_type in _PYDANTIC_TYPE_MESSAGES:
+            detail = _PYDANTIC_TYPE_MESSAGES[err_type] or err["msg"]
+        else:
+            detail = err["msg"]
+        out.append(YamlValidationError(filename, f"'{loc}': {detail}"))
+    return out
+
+
 def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
     """Validate a single YAML file. Returns empty list if valid."""
     path = Path(yaml_path)
@@ -106,7 +138,8 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
     try:
         spec = MetricViewSpec(**raw)
     except pydantic.ValidationError as e:
-        return [*errors, YamlValidationError(name, f"Schema validation failed: {e}")]
+        errors.extend(_format_pydantic_errors(name, e))
+        return errors
 
     # 4. Version check
     if spec.version != "1.1":
