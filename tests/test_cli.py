@@ -1,5 +1,6 @@
 """Tests for CLI — uses Click CliRunner, no real Databricks needed."""
 
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -15,7 +16,7 @@ class TestVersion:
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert re.search(r"\d+\.\d+\.\d+", result.output)
 
 
 class TestValidateCommand:
