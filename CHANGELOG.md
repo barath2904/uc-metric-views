@@ -28,6 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [0.2.0]: https://github.com/barath2904/uc-metric-views/compare/v0.1.1...v0.2.0
 
+## [0.1.1] - 2026-03-19
+
+### Changed
+
+- Version test no longer hardcodes version string — matches any semver (`\d+\.\d+\.\d+`)
+- Expanded docstrings for `_find_join_key()` (3-step heuristic) and `_render_join()` (recursive indentation)
+- Added one-liner docstrings to Pydantic models: `DimensionDef`, `MeasureDef`, `JoinDef`, `MaterializationConfig`, `MaterializedViewDef`
+- Added comment above `_AGG_FUNCTIONS` constant
+
+### Fixed
+
+- Type annotations in `validator.py`: `dict` → `dict[str, Any]`, `list` → `list[Any]`
+
+[0.1.1]: https://github.com/barath2904/uc-metric-views/compare/v0.1.0...v0.1.1
+
 ## [0.1.0] - 2026-03-18
 
 ### Added
@@ -46,21 +61,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflows (TestPyPI on version tag, PyPI via manual dispatch)
 
 [0.1.0]: https://github.com/barath2904/uc-metric-views/releases/tag/v0.1.0
-
-## [0.1.1] - 2026-03-19
-
-### Changed
-
-- Version test no longer hardcodes version string — matches any semver (`\d+\.\d+\.\d+`)
-
-### Fixed
-
-- Type annotations in `validator.py`: `dict` → `dict[str, Any]`, `list` → `list[Any]`
-
-### Docs
-
-- Expanded docstrings for `_find_join_key()` (3-step heuristic) and `_render_join()` (recursive indentation)
-- Added one-liner docstrings to Pydantic models: `DimensionDef`, `MeasureDef`, `JoinDef`, `MaterializationConfig`, `MaterializedViewDef`
-- Added comment above `_AGG_FUNCTIONS` constant
-
-[0.1.1]: https://github.com/barath2904/uc-metric-views/compare/v0.1.0...v0.1.1
