@@ -120,7 +120,8 @@ def deploy_file(
                 status="success",
                 sql=ddl,
             )
-        error_msg = str(response.status.error) if response.status else "Unknown"
+        status_error = response.status.error if response.status else None
+        error_msg = str(status_error) if status_error else "Statement did not succeed"
         return DeployResult(
             yaml_file=path.name,
             view_fqn=fqn,

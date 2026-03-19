@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def _humanize(col_name: str) -> str:
     """'total_order_amount' → 'Total Order Amount'"""
-    return col_name.replace("_", " ").title()
+    return col_name.replace("_", " ").strip().title()
 
 
 def _find_join_key(source: DiscoveredTable, dim: DiscoveredTable) -> str | None:

@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Friendly Pydantic error message for `literal_error` type
 - Branch coverage enabled (`branch = true` in `[tool.coverage.run]`)
 
+### Fixed
+
+- Whitespace-only strings (`"   "`) in `name`/`expr`/`source` fields now rejected — `StrippedStr` type strips before `min_length` check
+- `_humanize()` no longer produces leading/trailing spaces from underscores (`"_test"` → `"Test"`, not `" Test"`)
+- Deployer no longer shows `"None"` when SDK returns failed state without error detail — now shows `"Statement did not succeed"`
+
 [0.2.1]: https://github.com/barath2904/uc-metric-views/compare/v0.2.0...v0.2.1
 
 ## [0.2.0] - 2026-03-19

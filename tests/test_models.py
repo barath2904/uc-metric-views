@@ -189,6 +189,21 @@ class TestBlankStringFields:
         with pytest.raises(ValueError, match="either"):
             JoinDef(name="dim", source="c.s.t", on="   ")
 
+    def test_whitespace_only_dimension_name_rejected(self):
+        """StrippedStr strips before min_length — '   ' becomes '' and fails."""
+        with pytest.raises(pydantic.ValidationError):
+            DimensionDef(name="   ", expr="col1")
+
+    def test_whitespace_only_measure_expr_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            MeasureDef(name="M1", expr="   ")
+
+    def test_leading_trailing_whitespace_stripped(self):
+        """StrippedStr strips whitespace — ' Revenue ' becomes 'Revenue'."""
+        d = DimensionDef(name="  Revenue  ", expr="  col1  ")
+        assert d.name == "Revenue"
+        assert d.expr == "col1"
+
 
 class TestMaterializationConstraints:
     def test_empty_materialized_views_rejected(self):
