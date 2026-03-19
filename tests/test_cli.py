@@ -38,7 +38,20 @@ class TestValidateCommand:
 
     def test_strict_mode_fails_on_warnings(self):
         runner = CliRunner()
-        # with_window_measures.yaml emits experimental warnings
+        # sample_orders.yaml with a non-FQN source produces a warning
+        result = runner.invoke(
+            cli,
+            [
+                "validate",
+                str(FIXTURES / "unquoted_on_key.yaml"),
+                "--strict",
+            ],
+        )
+        assert result.exit_code != 0
+
+    def test_strict_mode_fails_on_suggestions(self):
+        runner = CliRunner()
+        # with_window_measures.yaml emits experimental window as a suggestion
         result = runner.invoke(
             cli,
             [
@@ -48,6 +61,23 @@ class TestValidateCommand:
             ],
         )
         assert result.exit_code != 0
+
+    def test_error_output_shows_error_label(self):
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["validate", str(FIXTURES / "invalid_missing_measures.yaml")],
+        )
+        assert "ERROR" in result.output
+
+    def test_suggestion_output_shows_hint_label(self):
+        runner = CliRunner()
+        # with_window_measures.yaml emits experimental window as a suggestion
+        result = runner.invoke(
+            cli,
+            ["validate", str(FIXTURES / "with_window_measures.yaml")],
+        )
+        assert "HINT" in result.output
 
     def test_directory_validation(self):
         runner = CliRunner()

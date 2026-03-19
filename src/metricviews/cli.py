@@ -152,7 +152,7 @@ def inspect(
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
-@click.option("--strict", is_flag=True, help="Treat warnings as errors")
+@click.option("--strict", is_flag=True, help="Treat warnings and suggestions as errors (for CI)")
 @click.pass_context
 def validate(ctx: click.Context, path: str, strict: bool) -> None:
     """Validate YAML metric view definitions. PATH is a file or directory."""
@@ -161,19 +161,24 @@ def validate(ctx: click.Context, path: str, strict: bool) -> None:
 
     error_count = sum(1 for e in errors if e.severity == "error")
     warning_count = sum(1 for e in errors if e.severity == "warning")
+    suggestion_count = sum(1 for e in errors if e.severity == "suggestion")
 
     for e in errors:
-        icon = "ERROR" if e.severity == "error" else "WARN "
-        click.echo(f"  [{icon}] {e.file}: {e.message}")
+        if e.severity == "error":
+            label = click.style("[ERROR]", fg="red", bold=True)
+        elif e.severity == "warning":
+            label = click.style("[WARN ]", fg="yellow")
+        else:
+            label = click.style("[HINT ]", fg="cyan")
+        click.echo(f"  {label} {e.file}: {e.message}")
 
     if not errors:
         click.echo("All files valid.")
 
-    if error_count > 0 or (strict and warning_count > 0):
-        click.echo(f"\n{error_count} error(s), {warning_count} warning(s)")
+    summary = f"{error_count} error(s), {warning_count} warning(s), {suggestion_count} hint(s)"
+    click.echo(f"\n{summary}")
+    if error_count > 0 or (strict and (warning_count > 0 or suggestion_count > 0)):
         ctx.exit(1)
-    else:
-        click.echo(f"\n{warning_count} warning(s), 0 errors")
 
 
 @cli.command()

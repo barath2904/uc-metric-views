@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "uc-metric-views"
-version = "0.1.1"
+version = "0.2.0"
 description = "Generate, validate and deploy Databricks Unity Catalog Metric Views"
 readme = "README.md"
 license = "MIT"
