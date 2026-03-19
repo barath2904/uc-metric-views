@@ -176,11 +176,9 @@ def validate(ctx: click.Context, path: str, strict: bool) -> None:
         click.echo("All files valid.")
 
     summary = f"{error_count} error(s), {warning_count} warning(s), {suggestion_count} hint(s)"
+    click.echo(f"\n{summary}")
     if error_count > 0 or (strict and (warning_count > 0 or suggestion_count > 0)):
-        click.echo(f"\n{summary}")
         ctx.exit(1)
-    else:
-        click.echo(f"\n{warning_count} warning(s), {suggestion_count} hint(s), 0 errors")
 
 
 @cli.command()

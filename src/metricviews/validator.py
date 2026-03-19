@@ -38,6 +38,7 @@ _AGG_FUNCTIONS = (
 )
 
 # Allows hyphens in catalog/schema/table names (e.g. my-catalog.my-schema.orders).
+# Sister pattern: deployer._IDENTIFIER_PATTERN uses the same [\w-]+ alphabet for single segments.
 _FQN_PATTERN = re.compile(r"^[\w-]+\.[\w-]+\.[\w-]+$")
 
 _VALID_FORMAT_TYPES = {"number", "currency", "percentage", "byte", "date", "date_time"}
@@ -152,6 +153,10 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
             )
         )
 
+    # Precompute shared traversals used by multiple checks below.
+    all_columns = spec.dimensions + spec.measures
+    flat_joins = _flatten_joins(spec.joins) if spec.joins else []
+
     # 5. Source should be FQN or SQL query (suggestion — may be intentional)
     if not _FQN_PATTERN.match(spec.source) and "SELECT" not in spec.source.upper():
         errors.append(
@@ -164,17 +169,15 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
         )
 
     # 6. Join source should be FQN
-    if spec.joins:
-        errors.extend(
-            YamlValidationError(
-                name,
-                f"Join '{j.name}' source '{j.source}' should be fully-qualified "
-                "(catalog.schema.table)",
-                "warning",
-            )
-            for j in _flatten_joins(spec.joins)
-            if not _FQN_PATTERN.match(j.source)
+    errors.extend(
+        YamlValidationError(
+            name,
+            f"Join '{j.name}' source '{j.source}' should be fully-qualified (catalog.schema.table)",
+            "warning",
         )
+        for j in flat_joins
+        if not _FQN_PATTERN.match(j.source)
+    )
 
     # 7. Measures should contain aggregate functions (suggestion — may be intentional)
     for m in spec.measures:
@@ -213,7 +216,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
             break
 
     # 10. Format type validation
-    for col in list(spec.dimensions) + list(spec.measures):
+    for col in all_columns:
         if col.format is not None and isinstance(col.format, dict):
             fmt_type = col.format.get("type")
             if fmt_type is None:
@@ -234,7 +237,7 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                 )
 
     # 11. Synonym validation: empty strings and duplicates
-    for col in list(spec.dimensions) + list(spec.measures):
+    for col in all_columns:
         if col.synonyms:
             if any(s == "" for s in col.synonyms):
                 errors.append(
@@ -261,15 +264,14 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                 )
 
     # 12. Placeholder join keys ('???') in on and using
-    if spec.joins:
-        errors.extend(
-            YamlValidationError(
-                name,
-                f"Join '{j.name}' has placeholder key — replace '???' with actual column names",
-            )
-            for j in _flatten_joins(spec.joins)
-            if (j.on and "???" in j.on) or (j.using and any("???" in u for u in j.using))
+    errors.extend(
+        YamlValidationError(
+            name,
+            f"Join '{j.name}' has placeholder key — replace '???' with actual column names",
         )
+        for j in flat_joins
+        if (j.on and "???" in j.on) or (j.using and any("???" in u for u in j.using))
+    )
 
     # 13. Materialized view dimension/measure name cross-reference
     if spec.materialization:
