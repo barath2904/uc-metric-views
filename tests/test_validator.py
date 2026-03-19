@@ -356,7 +356,7 @@ materialization:
   schedule: "every 6 hours"
   materialized_views:
     - name: daily
-      type: full
+      type: aggregated
       dimensions: ["nonexistent_dim"]
 """
         f = tmp_path / "matview_bad_ref.yaml"

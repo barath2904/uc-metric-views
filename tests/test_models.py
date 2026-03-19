@@ -195,6 +195,16 @@ class TestMaterializationConstraints:
         with pytest.raises(pydantic.ValidationError):
             MaterializationConfig(schedule="every 6 hours", materialized_views=[])
 
+    @pytest.mark.parametrize("mv_type", ["aggregated", "unaggregated"])
+    def test_valid_materialized_view_types(self, mv_type):
+        mv = MaterializedViewDef(name="test", type=mv_type)
+        assert mv.type == mv_type
+
+    @pytest.mark.parametrize("mv_type", ["full", "partial", "incremental", ""])
+    def test_invalid_materialized_view_types_rejected(self, mv_type):
+        with pytest.raises(pydantic.ValidationError):
+            MaterializedViewDef(name="test", type=mv_type)
+
 
 class TestDeployResult:
     def test_success_result(self):

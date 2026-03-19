@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `MaterializedViewDef.type` tightened from `str` to `Literal["aggregated", "unaggregated"]` — invalid types now caught at validation time
+- Friendly Pydantic error message for `literal_error` type
 - Branch coverage enabled (`branch = true` in `[tool.coverage.run]`)
 
 [0.2.1]: https://github.com/barath2904/uc-metric-views/compare/v0.2.0...v0.2.1
