@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from metricviews.validator import validate_directory, validate_file
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -378,6 +380,81 @@ measures:
         f.write_text(yaml_content)
         errors = validate_file(f)
         assert not any("fully-qualified" in e.message for e in errors)
+
+
+class TestFormatTypeValidation:
+    """Parameterized tests for all valid and invalid format types."""
+
+    @pytest.mark.parametrize(
+        "fmt_type", ["number", "currency", "percentage", "byte", "date", "date_time"]
+    )
+    def test_valid_format_types_accepted(self, tmp_path, fmt_type):
+        yaml_content = f"""version: "1.1"
+source: cat.sch.tbl
+dimensions:
+  - name: D1
+    expr: "col1"
+    format:
+      type: "{fmt_type}"
+measures:
+  - name: M1
+    expr: "SUM(col2)"
+"""
+        f = tmp_path / "format.yaml"
+        f.write_text(yaml_content)
+        errors = validate_file(f)
+        assert not any("format type" in e.message.lower() for e in errors)
+
+    @pytest.mark.parametrize("fmt_type", ["invalid", "money", "percent", "string", "time"])
+    def test_invalid_format_types_rejected(self, tmp_path, fmt_type):
+        yaml_content = f"""version: "1.1"
+source: cat.sch.tbl
+dimensions:
+  - name: D1
+    expr: "col1"
+    format:
+      type: "{fmt_type}"
+measures:
+  - name: M1
+    expr: "SUM(col2)"
+"""
+        f = tmp_path / "format.yaml"
+        f.write_text(yaml_content)
+        errors = validate_file(f)
+        errs = [e for e in errors if e.severity == "error"]
+        assert any("format type" in e.message.lower() for e in errs)
+
+
+class TestPydanticErrorFallback:
+    """The else branch in _format_pydantic_errors for unknown Pydantic error types."""
+
+    def test_unknown_pydantic_error_type_uses_msg(self, tmp_path):
+        """Trigger a Pydantic error type not in _PYDANTIC_TYPE_MESSAGES.
+
+        A model_validator 'value_error' with custom message tests the empty-string
+        mapping path. A duplicate name triggers the model validator which produces
+        a 'value_error' type — the dict maps it to '' so err['msg'] is used as-is.
+        """
+        yaml_content = """version: "1.1"
+source: cat.sch.tbl
+dimensions:
+  - name: Same
+    expr: "col1"
+measures:
+  - name: Same
+    expr: "SUM(col2)"
+"""
+        f = tmp_path / "dup_names.yaml"
+        f.write_text(yaml_content)
+        errors = validate_file(f)
+        errs = [e for e in errors if e.severity == "error"]
+        assert len(errs) > 0
+        # The value_error branch maps to "" so err["msg"] is used directly
+        assert any("Duplicate" in e.message for e in errs)
+        # Must still be human-readable
+        for e in errs:
+            assert "input_value" not in e.message
+            assert "pydantic.dev" not in e.message
 
 
 class TestValidateDirectory:
