@@ -25,7 +25,15 @@ def _humanize(col_name: str) -> str:
 
 
 def _find_join_key(source: DiscoveredTable, dim: DiscoveredTable) -> str | None:
-    """Auto-detect join key between source and dimension table."""
+    """Auto-detect the join key between a fact table and a dimension table.
+
+    Three-step heuristic (returns on first match):
+    1. Shared column with a key suffix (_key, _id, _sk) → returns the bare column name
+       for a USING clause.
+    2. Derived candidate from the dimension name (e.g. dim_customer → customer_id) exists
+       in both tables → returns a fully-qualified "source.col = dim.col" ON expression.
+    3. No match → returns None (caller emits a '???' placeholder for the user to fill in).
+    """
     source_cols = {c.name.lower() for c in source.columns}
     dim_cols = {c.name.lower() for c in dim.columns}
 
@@ -159,7 +167,11 @@ def spec_to_yaml(spec: MetricViewSpec) -> str:
 
 
 def _render_join(lines: list[str], join: JoinDef, indent: int) -> None:
-    """Render a single join (and nested children) to YAML lines."""
+    """Render a join block to YAML lines, recursing into nested joins.
+
+    Each level of nesting adds 4 spaces to `indent` so children are indented
+    relative to their parent's `joins:` key.
+    """
     pad = " " * indent
     lines.append(f"{pad}- name: {join.name}")
     lines.append(f"{pad}  source: {join.source}")

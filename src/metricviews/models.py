@@ -28,6 +28,8 @@ class WindowSpec(BaseModel):
 
 
 class DimensionDef(BaseModel):
+    """A groupable attribute (column or expression) in the metric view."""
+
     name: str
     expr: str
     comment: str | None = None
@@ -37,6 +39,8 @@ class DimensionDef(BaseModel):
 
 
 class MeasureDef(BaseModel):
+    """An aggregate expression (metric) in the metric view."""
+
     name: str
     expr: str
     comment: str | None = None
@@ -47,6 +51,8 @@ class MeasureDef(BaseModel):
 
 
 class JoinDef(BaseModel):
+    """A dimension table joined into the metric view, with optional nested joins."""
+
     name: str
     source: str
     on: str | None = None
@@ -66,6 +72,8 @@ JoinDef.model_rebuild()
 
 
 class MaterializedViewDef(BaseModel):
+    """A single pre-aggregated view within a materialization config."""
+
     name: str
     type: str
     dimensions: list[str] | None = None
@@ -73,6 +81,8 @@ class MaterializedViewDef(BaseModel):
 
 
 class MaterializationConfig(BaseModel):
+    """Experimental — schedule and mode for pre-aggregating the metric view."""
+
     schedule: str
     mode: str = "relaxed"
     materialized_views: list[MaterializedViewDef]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import pydantic
 import yaml  # type: ignore[import-untyped]
@@ -22,6 +22,7 @@ class YamlValidationError:
     severity: Literal["error", "warning"] = "error"
 
 
+# Aggregate function prefixes used to heuristically validate measure expressions.
 _AGG_FUNCTIONS = (
     "SUM(",
     "COUNT(",
@@ -41,7 +42,7 @@ _FQN_PATTERN = re.compile(r"^[\w]+\.[\w]+\.[\w]+$")
 _VALID_FORMAT_TYPES = {"number", "currency", "percentage", "byte", "date", "date_time"}
 
 
-def _fix_yaml_on_boolean_keys(raw: dict) -> list[YamlValidationError]:  # type: ignore[type-arg]
+def _fix_yaml_on_boolean_keys(raw: dict[str, Any]) -> list[YamlValidationError]:
     """Pre-Pydantic fix: yaml.safe_load parses unquoted 'on:' as boolean True.
 
     Detects {True: "join condition"} in join dicts and rewrites to {"on": "value"}.
@@ -49,7 +50,7 @@ def _fix_yaml_on_boolean_keys(raw: dict) -> list[YamlValidationError]:  # type: 
     """
     warnings: list[YamlValidationError] = []
 
-    def _fix_joins(joins_list: list) -> None:  # type: ignore[type-arg]
+    def _fix_joins(joins_list: list[Any]) -> None:
         for join_dict in joins_list:
             if not isinstance(join_dict, dict):
                 continue
