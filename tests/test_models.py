@@ -141,6 +141,61 @@ class TestDiscoveredTable:
         assert t.fqn == "cat.sch.tbl"
 
 
+class TestSubModelExtraForbid:
+    """Sub-models must reject unknown fields — catches YAML typos silently swallowed before."""
+
+    def test_dimension_rejects_unknown_field(self):
+        with pytest.raises(pydantic.ValidationError):
+            DimensionDef(name="D1", expr="col1", dispaly_name="typo")
+
+    def test_measure_rejects_unknown_field(self):
+        with pytest.raises(pydantic.ValidationError):
+            MeasureDef(name="M1", expr="SUM(x)", synomyns=["typo"])
+
+    def test_join_rejects_unknown_field(self):
+        with pytest.raises(pydantic.ValidationError):
+            JoinDef(name="dim", source="c.s.t", on="a = b", unkown="field")
+
+
+class TestBlankStringFields:
+    """Required string fields must reject empty and whitespace-only values."""
+
+    def test_blank_dimension_name_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            DimensionDef(name="", expr="col1")
+
+    def test_blank_dimension_expr_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            DimensionDef(name="D1", expr="")
+
+    def test_blank_measure_name_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            MeasureDef(name="", expr="SUM(x)")
+
+    def test_blank_measure_expr_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            MeasureDef(name="M1", expr="")
+
+    def test_blank_join_name_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            JoinDef(name="", source="c.s.t", on="a = b")
+
+    def test_blank_join_source_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            JoinDef(name="dim", source="", on="a = b")
+
+    def test_whitespace_only_on_is_rejected(self):
+        """'on: "   "' is truthy so the current model_validator treats it as valid join key."""
+        with pytest.raises(ValueError, match="either"):
+            JoinDef(name="dim", source="c.s.t", on="   ")
+
+
+class TestMaterializationConstraints:
+    def test_empty_materialized_views_rejected(self):
+        with pytest.raises(pydantic.ValidationError):
+            MaterializationConfig(schedule="every 6 hours", materialized_views=[])
+
+
 class TestDeployResult:
     def test_success_result(self):
         r = DeployResult(

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-19
+
+### Added
+
+- Three-tier severity in `YamlValidationError`: `error`, `warning`, and `suggestion`
+- Human-readable Pydantic error messages — no more raw `input_value` dumps or `pydantic.dev` URLs
+- Colored CLI output: `[ERROR]` in red, `[WARN ]` in yellow, `[HINT ]` in cyan
+- `--strict` now escalates both warnings **and** suggestions to errors (updated help text)
+- 14 new validation checks:
+  - `extra="forbid"` on all sub-models (`DimensionDef`, `MeasureDef`, `JoinDef`, `WindowSpec`, `MaterializationConfig`, `MaterializedViewDef`) — typos in field names are now errors instead of being silently dropped
+  - `min_length=1` on required string fields — empty `name` / `expr` / `source` are now errors
+  - `min_length=1` on `MaterializationConfig.materialized_views` — empty list is now an error
+  - Whitespace-only `on:` join condition treated as missing (stripped before truthy check)
+  - Join `source` validated as FQN (warning)
+  - Placeholder `???` detected in `using` list as well as `on` condition
+  - `format` dict without a `type` key is now an error (not silently passed)
+  - Synonyms: empty strings are errors; duplicates within a column are warnings
+  - Materialized view `dimensions`/`measures` cross-referenced against declared names
+  - FQN pattern updated to allow hyphens in catalog/schema/table names (`my-catalog.my-schema.tbl`)
+- Informational findings reclassified from `warning` → `suggestion`: non-FQN source, missing aggregate function, experimental `materialization`, experimental `window`
+
+[0.2.0]: https://github.com/barath2904/uc-metric-views/compare/v0.1.1...v0.2.0
+
 ## [0.1.0] - 2026-03-18
 
 ### Added

@@ -22,16 +22,20 @@ class ColumnRole(str, Enum):
 class WindowSpec(BaseModel):
     """Experimental — window specification for windowed/cumulative/semiadditive measures."""
 
-    order: str
-    range: str
+    model_config = ConfigDict(extra="forbid")
+
+    order: str = Field(min_length=1)
+    range: str = Field(min_length=1)
     semiadditive: str | None = None
 
 
 class DimensionDef(BaseModel):
     """A groupable attribute (column or expression) in the metric view."""
 
-    name: str
-    expr: str
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    expr: str = Field(min_length=1)
     comment: str | None = None
     display_name: str | None = None
     format: dict[str, Any] | None = None
@@ -41,8 +45,10 @@ class DimensionDef(BaseModel):
 class MeasureDef(BaseModel):
     """An aggregate expression (metric) in the metric view."""
 
-    name: str
-    expr: str
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    expr: str = Field(min_length=1)
     comment: str | None = None
     display_name: str | None = None
     format: dict[str, Any] | None = None
@@ -53,18 +59,22 @@ class MeasureDef(BaseModel):
 class JoinDef(BaseModel):
     """A dimension table joined into the metric view, with optional nested joins."""
 
-    name: str
-    source: str
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    source: str = Field(min_length=1)
     on: str | None = None
     using: list[str] | None = None
     joins: list[JoinDef] | None = None
 
     @model_validator(mode="after")
     def exactly_one_join_key(self) -> JoinDef:
-        if self.on and self.using:
+        on = self.on.strip() if self.on else None
+        if on and self.using:
             raise ValueError(f"Join '{self.name}': specify 'on' or 'using', not both")
-        if not self.on and not self.using:
+        if not on and not self.using:
             raise ValueError(f"Join '{self.name}': specify either 'on' or 'using'")
+        self.on = on
         return self
 
 
@@ -74,8 +84,10 @@ JoinDef.model_rebuild()
 class MaterializedViewDef(BaseModel):
     """A single pre-aggregated view within a materialization config."""
 
-    name: str
-    type: str
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    type: str = Field(min_length=1)
     dimensions: list[str] | None = None
     measures: list[str] | None = None
 
@@ -83,9 +95,11 @@ class MaterializedViewDef(BaseModel):
 class MaterializationConfig(BaseModel):
     """Experimental — schedule and mode for pre-aggregating the metric view."""
 
+    model_config = ConfigDict(extra="forbid")
+
     schedule: str
     mode: str = "relaxed"
-    materialized_views: list[MaterializedViewDef]
+    materialized_views: list[MaterializedViewDef] = Field(min_length=1)
 
 
 class MetricViewSpec(BaseModel):

@@ -19,7 +19,7 @@ class YamlValidationError:
 
     file: str
     message: str
-    severity: Literal["error", "warning"] = "error"
+    severity: Literal["error", "warning", "suggestion"] = "error"
 
 
 # Aggregate function prefixes used to heuristically validate measure expressions.
@@ -37,9 +37,23 @@ _AGG_FUNCTIONS = (
     "STDDEV(",
 )
 
-_FQN_PATTERN = re.compile(r"^[\w]+\.[\w]+\.[\w]+$")
+# Allows hyphens in catalog/schema/table names (e.g. my-catalog.my-schema.orders).
+_FQN_PATTERN = re.compile(r"^[\w-]+\.[\w-]+\.[\w-]+$")
 
 _VALID_FORMAT_TYPES = {"number", "currency", "percentage", "byte", "date", "date_time"}
+
+_PYDANTIC_TYPE_MESSAGES: dict[str, str] = {
+    "missing": "required field missing",
+    "extra_forbidden": "unknown field — check for typos",
+    "string_type": "must be a string",
+    "string_too_short": "must not be empty",
+    "list_type": "must be a list",
+    "list_too_short": "must have at least 1 item",
+    "dict_type": "must be a mapping",
+    "bool_type": "must be true or false",
+    "int_type": "must be an integer",
+    "value_error": "",  # use msg as-is
+}
 
 
 def _fix_yaml_on_boolean_keys(raw: dict[str, Any]) -> list[YamlValidationError]:
@@ -76,6 +90,26 @@ def _fix_yaml_on_boolean_keys(raw: dict[str, Any]) -> list[YamlValidationError]:
     return warnings
 
 
+def _format_pydantic_errors(
+    filename: str, exc: pydantic.ValidationError
+) -> list[YamlValidationError]:
+    """Convert a Pydantic ValidationError into clean, user-facing error messages.
+
+    Drops input_value dumps, pydantic.dev URLs, and internal type codes.
+    Returns one YamlValidationError per Pydantic error.
+    """
+    out = []
+    for err in exc.errors():
+        loc = " → ".join(str(p) for p in err["loc"]) if err["loc"] else "root"
+        err_type = err["type"]
+        if err_type in _PYDANTIC_TYPE_MESSAGES:
+            detail = _PYDANTIC_TYPE_MESSAGES[err_type] or err["msg"]
+        else:
+            detail = err["msg"]
+        out.append(YamlValidationError(filename, f"'{loc}': {detail}"))
+    return out
+
+
 def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
     """Validate a single YAML file. Returns empty list if valid."""
     path = Path(yaml_path)
@@ -106,7 +140,8 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
     try:
         spec = MetricViewSpec(**raw)
     except pydantic.ValidationError as e:
-        return [*errors, YamlValidationError(name, f"Schema validation failed: {e}")]
+        errors.extend(_format_pydantic_errors(name, e))
+        return errors
 
     # 4. Version check
     if spec.version != "1.1":
@@ -117,18 +152,31 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
             )
         )
 
-    # 5. Source should be FQN or SQL query
+    # 5. Source should be FQN or SQL query (suggestion — may be intentional)
     if not _FQN_PATTERN.match(spec.source) and "SELECT" not in spec.source.upper():
         errors.append(
             YamlValidationError(
                 name,
                 f"Source '{spec.source}' should be fully-qualified "
                 "(catalog.schema.table) or a SQL query",
-                "warning",
+                "suggestion",
             )
         )
 
-    # 6. Measures should contain aggregate functions
+    # 6. Join source should be FQN
+    if spec.joins:
+        errors.extend(
+            YamlValidationError(
+                name,
+                f"Join '{j.name}' source '{j.source}' should be fully-qualified "
+                "(catalog.schema.table)",
+                "warning",
+            )
+            for j in _flatten_joins(spec.joins)
+            if not _FQN_PATTERN.match(j.source)
+        )
+
+    # 7. Measures should contain aggregate functions (suggestion — may be intentional)
     for m in spec.measures:
         expr_upper = m.expr.upper()
         has_agg = any(fn in expr_upper for fn in _AGG_FUNCTIONS)
@@ -138,37 +186,45 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                 YamlValidationError(
                     name,
                     f"Measure '{m.name}' may be missing aggregate function: {m.expr}",
-                    "warning",
+                    "suggestion",
                 )
             )
 
-    # 7. Experimental: materialization
+    # 8. Experimental: materialization (suggestion — valid but advisory)
     if spec.materialization:
         errors.append(
             YamlValidationError(
                 name,
                 "materialization is an Experimental feature — behavior may change",
-                "warning",
+                "suggestion",
             )
         )
 
-    # 8. Experimental: window measures
+    # 9. Experimental: window measures (suggestion — valid but advisory)
     for m in spec.measures:
         if m.window:
             errors.append(
                 YamlValidationError(
                     name,
                     f"Measure '{m.name}' uses window (Experimental feature)",
-                    "warning",
+                    "suggestion",
                 )
             )
             break
 
-    # 9. Format type validation
+    # 10. Format type validation
     for col in list(spec.dimensions) + list(spec.measures):
-        if col.format and isinstance(col.format, dict):
+        if col.format is not None and isinstance(col.format, dict):
             fmt_type = col.format.get("type")
-            if fmt_type and fmt_type not in _VALID_FORMAT_TYPES:
+            if fmt_type is None:
+                errors.append(
+                    YamlValidationError(
+                        name,
+                        f"Column '{col.name}' format must include a 'type' key. "
+                        f"Valid types: {', '.join(sorted(_VALID_FORMAT_TYPES))}",
+                    )
+                )
+            elif fmt_type not in _VALID_FORMAT_TYPES:
                 errors.append(
                     YamlValidationError(
                         name,
@@ -177,17 +233,34 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                     )
                 )
 
-    # 10. Synonym count (max 10 per column)
-    errors.extend(
-        YamlValidationError(
-            name,
-            f"Column '{col.name}' has {len(col.synonyms)} synonyms (max 10)",
-        )
-        for col in list(spec.dimensions) + list(spec.measures)
-        if col.synonyms and len(col.synonyms) > 10
-    )
+    # 11. Synonym validation: empty strings and duplicates
+    for col in list(spec.dimensions) + list(spec.measures):
+        if col.synonyms:
+            if any(s == "" for s in col.synonyms):
+                errors.append(
+                    YamlValidationError(
+                        name,
+                        f"Column '{col.name}' has empty synonym — remove blank entries",
+                    )
+                )
+            dupes = {s for s in col.synonyms if col.synonyms.count(s) > 1}
+            if dupes:
+                errors.append(
+                    YamlValidationError(
+                        name,
+                        f"Column '{col.name}' has duplicate synonyms: {dupes}",
+                        "warning",
+                    )
+                )
+            if len(col.synonyms) > 10:
+                errors.append(
+                    YamlValidationError(
+                        name,
+                        f"Column '{col.name}' has {len(col.synonyms)} synonyms (max 10)",
+                    )
+                )
 
-    # 11. Placeholder join keys
+    # 12. Placeholder join keys ('???') in on and using
     if spec.joins:
         errors.extend(
             YamlValidationError(
@@ -195,7 +268,29 @@ def validate_file(yaml_path: str | Path) -> list[YamlValidationError]:
                 f"Join '{j.name}' has placeholder key — replace '???' with actual column names",
             )
             for j in _flatten_joins(spec.joins)
-            if j.on and "???" in j.on
+            if (j.on and "???" in j.on) or (j.using and any("???" in u for u in j.using))
+        )
+
+    # 13. Materialized view dimension/measure name cross-reference
+    if spec.materialization:
+        known_names = {d.name for d in spec.dimensions} | {m.name for m in spec.measures}
+        errors.extend(
+            YamlValidationError(
+                name,
+                f"Materialized view '{mv.name}' references unknown dimension '{dim_name}'",
+            )
+            for mv in spec.materialization.materialized_views
+            for dim_name in mv.dimensions or []
+            if dim_name not in known_names
+        )
+        errors.extend(
+            YamlValidationError(
+                name,
+                f"Materialized view '{mv.name}' references unknown measure '{measure_name}'",
+            )
+            for mv in spec.materialization.materialized_views
+            for measure_name in mv.measures or []
+            if measure_name not in known_names
         )
 
     return errors
